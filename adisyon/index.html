@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3a34">
+<title>LOU Adisyon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#efe9dc; --paper:#fffdf6; --line:#e3dccb; --margin:#e9a9a2;
+  --ink:#1d2421; --muted:#6f756f; --accent:#1f3a34; --accent-ink:#fff;
+  --new:#fff3c4; --ok:#2e7d4f; --danger:#b3261e; --chip:#e7e1d2;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121614; --paper:#1b201e; --line:#2a312e; --margin:#6d3b37;
+    --ink:#ece9e1; --muted:#9aa19c; --accent:#7fc4ae; --accent-ink:#0f1513;
+    --new:#3a3418; --ok:#6fcf97; --danger:#ff8a80; --chip:#262d2a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121614; --paper:#1b201e; --line:#2a312e; --margin:#6d3b37;
+  --ink:#ece9e1; --muted:#9aa19c; --accent:#7fc4ae; --accent-ink:#0f1513;
+  --new:#3a3418; --ok:#6fcf97; --danger:#ff8a80; --chip:#262d2a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+.app{max-width:720px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+
+/* Header */
+header{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 16px 8px}
+.top{display:flex;align-items:center;gap:8px}
+.brand{font-family:Caveat,cursive;font-size:28px;font-weight:700;letter-spacing:.5px;margin-right:auto;line-height:1}
+.brand small{font-family:Inter,sans-serif;font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0;display:block}
+.btn{border:0;border-radius:10px;padding:9px 12px;background:var(--chip);font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn.danger{background:transparent;color:var(--danger)}
+.btn:disabled{opacity:.45;cursor:default}
+.table-btn{font-size:16px}
+.table-btn b{font-size:18px}
+
+.search-wrap{position:relative;margin-top:10px}
+.search{width:100%;border:2px solid var(--accent);border-radius:14px;padding:13px 44px 13px 14px;font:inherit;font-size:17px;background:var(--paper);color:var(--ink);outline:none}
+.search::placeholder{color:var(--muted)}
+.clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:22px;color:var(--muted);width:36px;height:36px;display:none}
+.hint{font-size:12px;color:var(--muted);margin:6px 2px 0}
+.hint code{background:var(--chip);border-radius:4px;padding:0 4px;font-size:11.5px}
+
+.results{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--paper);border-radius:14px;box-shadow:var(--shadow);max-height:min(60vh,460px);overflow:auto;display:none;z-index:30}
+.results.show{display:block}
+.res{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;padding:11px 14px;border-bottom:1px solid var(--line)}
+.res:last-child{border-bottom:0}
+.res.active,.res:hover{background:var(--chip)}
+.res .n{flex:1;min-width:0}
+.res .n div{font-weight:600}
+.res .n small{color:var(--muted);font-size:12px}
+.res .p{font-variant-numeric:tabular-nums;font-weight:600}
+.res .plus{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;flex:none}
+.res mark{background:transparent;color:inherit;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
+.empty-res{padding:14px;color:var(--muted)}
+
+.cats{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{border:0;border-radius:999px;padding:6px 11px;background:var(--chip);font-size:13px;font-weight:500;white-space:nowrap}
+
+/* Notepad */
+main{flex:1;padding:4px 16px 120px}
+.pad{background:var(--paper);border-radius:6px 6px 14px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden;min-height:320px}
+.pad::before{content:"";position:absolute;left:44px;top:0;bottom:0;width:2px;background:var(--margin);opacity:.7}
+.pad-head{display:flex;align-items:baseline;justify-content:space-between;padding:14px 14px 8px 58px;border-bottom:2px solid var(--line)}
+.pad-title{font-family:Caveat,cursive;font-size:30px;font-weight:700;line-height:1}
+.pad-meta{font-size:12px;color:var(--muted);text-align:right}
+.lines{list-style:none;margin:0;padding:0}
+.ln{display:flex;align-items:center;gap:8px;min-height:52px;padding:6px 12px 6px 0;border-bottom:1px solid var(--line);position:relative}
+.ln.new{background:var(--new)}
+.ln .q{width:44px;flex:none;text-align:center;font-family:Caveat,cursive;font-size:26px;font-weight:700;line-height:1}
+.ln .body{flex:1;min-width:0;padding-left:10px;border:0;background:transparent;text-align:left;padding-top:4px;padding-bottom:4px}
+.ln .nm{font-weight:600}
+.ln .note{font-family:Caveat,cursive;font-size:19px;color:var(--danger);line-height:1.1}
+.ln .st{font-size:11px;color:var(--muted)}
+.ln .st.sent{color:var(--ok)}
+.ln .amt{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.stepper{display:flex;align-items:center;gap:2px}
+.stepper button{width:32px;height:32px;border-radius:9px;border:0;background:var(--chip);font-size:18px;font-weight:700;line-height:1}
+.pad-empty{padding:40px 20px 40px 58px;color:var(--muted)}
+.pad-empty .big{font-family:Caveat,cursive;font-size:26px;color:var(--ink);opacity:.7}
+.pad-foot{padding:12px 14px 14px 58px;display:flex;flex-direction:column;gap:4px}
+.row{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.row.total{font-size:20px;font-weight:700;padding-top:6px;border-top:2px dashed var(--line);margin-top:4px}
+.table-note{width:100%;border:0;border-bottom:1px dashed var(--line);background:transparent;color:var(--ink);font-family:Caveat,cursive;font-size:21px;padding:6px 0;outline:none}
+
+/* Bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--bg);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.bar-in{max-width:688px;margin:0 auto;display:flex;align-items:center;gap:8px}
+.bar .sum{margin-right:auto;line-height:1.1}
+.bar .sum small{color:var(--muted);font-size:12px;display:block}
+.bar .sum b{font-size:22px;font-variant-numeric:tabular-nums}
+
+/* Sheets */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.scrim.show{display:flex}
+.sheet{background:var(--paper);width:100%;max-width:720px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom))}
+.sheet h2{margin:0 0 12px;font-family:Caveat,cursive;font-size:30px;line-height:1}
+.sheet-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.tbl{border:0;border-radius:12px;background:var(--chip);padding:12px 6px;text-align:center;min-height:70px}
+.tbl b{display:block;font-size:17px}
+.tbl small{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.tbl.open{background:var(--accent);color:var(--accent-ink)}
+.tbl.open small{color:inherit;opacity:.85}
+.tbl.cur{outline:3px solid var(--margin);outline-offset:2px}
+.field{display:flex;flex-direction:column;gap:4px;margin:10px 0}
+.field label{font-size:12px;color:var(--muted);font-weight:600}
+.input{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;outline:none}
+.input:focus{border-color:var(--accent)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px;font-weight:600}
+.seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.actions .btn{flex:1;justify-content:center;padding:13px}
+.big-qty{display:flex;align-items:center;justify-content:center;gap:18px;margin:8px 0}
+.big-qty button{width:52px;height:52px;border-radius:14px;border:0;background:var(--chip);font-size:26px;font-weight:700}
+.big-qty span{font-family:Caveat,cursive;font-size:44px;font-weight:700;min-width:50px;text-align:center}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.quick button{border:0;background:var(--chip);border-radius:999px;padding:6px 10px;font-size:13px}
+.hist{list-style:none;padding:0;margin:0}
+.hist li{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.hist small{color:var(--muted)}
+.menu-list{list-style:none;padding:0;margin:0}
+.menu-list h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 4px}
+
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-weight:600;opacity:0;transition:.2s;z-index:60;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Print: receipt */
+#print{display:none}
+@media print{
+  body{background:#fff}
+  .app,.scrim,.toast,.bar{display:none!important}
+  #print{display:block;font:12px/1.35 "Courier New",monospace;color:#000;width:72mm;margin:0 auto}
+  #print h1{font-size:16px;text-align:center;margin:0}
+  #print .c{text-align:center}
+  #print table{width:100%;border-collapse:collapse}
+  #print td{vertical-align:top;padding:1px 0}
+  #print td.r{text-align:right;white-space:nowrap}
+  #print hr{border:0;border-top:1px dashed #000}
+}
+@media (max-width:420px){
+  .ln .stepper button{width:30px;height:30px}
+  .brand small{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="top">
+      <div class="brand">LOU Adisyon<small>Garson sipariş defteri</small></div>
+      <button class="btn table-btn" id="tableBtn" aria-label="Masa seç">🍽 <b id="tableName">Masa seç</b></button>
+      <button class="btn ghost" id="moreBtn" aria-label="Menü">☰</button>
+    </div>
+    <div class="search-wrap">
+      <input id="q" class="search" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
+             placeholder="Ürün yaz… örn: 2 sezar / sossuz" enterkeyhint="done" aria-label="Ürün ara ve ekle">
+      <button class="clear" id="clearQ" aria-label="Temizle">×</button>
+      <div class="results" id="results" role="listbox"></div>
+    </div>
+    <div class="cats" id="cats"></div>
+  </header>
+
+  <main>
+    <section class="pad" id="pad"></section>
+  </main>
+</div>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="sum"><small id="barInfo">Toplam</small><b id="barTotal">0 ₺</b></div>
+    <button class="btn" id="sendBtn">🔔 Mutfağa</button>
+    <button class="btn primary" id="payBtn">💳 Hesap</button>
+  </div>
+</div>
+
+<!-- Masa seçimi -->
+<div class="scrim" id="tablesSheet"><div class="sheet">
+  <div class="sheet-top"><h2>Masalar</h2><button class="btn ghost" data-close>Kapat</button></div>
+  <div class="grid" id="tableGrid"></div>
+  <div class="field"><label>Özel masa / isim ekle (Bahçe 3, Paket – Ahmet…)</label>
+    <div style="display:flex;gap:8px"><input class="input" id="newTable" style="flex:1" placeholder="Masa adı"><button class="btn primary" id="addTable">Aç</button></div>
+  </div>
+</div></div>
+
+<!-- Satır düzenle -->
+<div class="scrim" id="lineSheet"><div class="sheet">
+  <div class="sheet-top"><h2 id="lsName">Ürün</h2><button class="btn ghost" data-close>Kapat</button></div>
+  <div class="big-qty"><button id="lsMinus">−</button><span id="lsQty">1</span><button id="lsPlus">+</button></div>
+  <div class="field"><label>Not (mutfağa)</label><input class="input" id="lsNote" placeholder="örn: az pişmiş, soğansız">
+    <div class="quick" id="lsQuick"></div></div>
+  <div class="field"><label>Birim fiyat (₺) — ikram için 0</label><input class="input" id="lsPrice" type="number" inputmode="decimal" min="0"></div>
+  <div class="actions"><button class="btn danger" id="lsDelete">🗑 Sil</button><button class="btn primary" id="lsSave">Kaydet</button></div>
+</div></div>
+
+<!-- Hesap -->
+<div class="scrim" id="paySheet"><div class="sheet">
+  <div class="sheet-top"><h2>Hesap – <span id="payTable"></span></h2><button class="btn ghost" data-close>Kapat</button></div>
+  <div class="row"><span>Ara toplam</span><span id="paySub"></span></div>
+  <div class="field"><label>İndirim</label>
+    <div class="seg" id="discSeg"><button data-d="0" class="on">Yok</button><button data-d="5">%5</button><button data-d="10">%10</button><button data-d="15">%15</button><button data-d="20">%20</button></div></div>
+  <div class="row total"><span>Ödenecek</span><span id="payTotal"></span></div>
+  <div class="field"><label>Kişi sayısı (bölüştür)</label>
+    <div class="seg" id="splitSeg"></div>
+    <div class="row" style="margin-top:6px"><span>Kişi başı</span><b id="perPerson"></b></div></div>
+  <div class="field"><label>Ödeme şekli</label>
+    <div class="seg" id="methodSeg"><button data-m="Nakit" class="on">💵 Nakit</button><button data-m="Kart">💳 Kart</button><button data-m="Karışık">Karışık</button></div></div>
+  <div class="field" id="cashField"><label>Alınan nakit (para üstü)</label>
+    <input class="input" id="cashIn" type="number" inputmode="decimal" placeholder="örn: 2000">
+    <div class="row" style="margin-top:4px"><span>Para üstü</span><b id="change">–</b></div></div>
+  <div class="actions"><button class="btn" id="printBtn">🖨 Yazdır</button><button class="btn primary" id="closeBtn">✓ Ödendi, masayı kapat</button></div>
+</div></div>
+
+<!-- Diğer menü -->
+<div class="scrim" id="moreSheet"><div class="sheet">
+  <div class="sheet-top"><h2>Gün sonu</h2><button class="btn ghost" data-close>Kapat</button></div>
+  <div class="row"><span>Kapanan hesap</span><b id="dayCount"></b></div>
+  <div class="row"><span>Nakit</span><b id="dayCash"></b></div>
+  <div class="row"><span>Kart</span><b id="dayCard"></b></div>
+  <div class="row"><span>Karışık</span><b id="dayMix"></b></div>
+  <div class="row total"><span>Toplam ciro</span><span id="dayTotal"></span></div>
+  <h3 style="font-size:13px;color:var(--muted);margin:16px 0 0">KAPANAN HESAPLAR</h3>
+  <ul class="hist" id="histList"></ul>
+  <div class="field"><label>Garson adı</label><input class="input" id="waiter" placeholder="Adınız (adisyonda görünür)"></div>
+  <div class="actions">
+    <button class="btn" id="browseBtn">📖 Tüm menü</button>
+    <button class="btn" id="themeBtn">🌓 Tema</button>
+    <button class="btn danger" id="resetDay">Günü sıfırla</button>
+  </div>
+  <p class="hint">Menü fiyatları: <span id="menuDate"></span>. Veriler bu cihazda saklanır.</p>
+</div></div>
+
+<!-- Menü göz at -->
+<div class="scrim" id="browseSheet"><div class="sheet">
+  <div class="sheet-top"><h2 id="browseTitle">Menü</h2><button class="btn ghost" data-close>Kapat</button></div>
+  <div id="browseList"></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<div id="print"></div>
+
+<script src="menu.js"></script>
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const TL = n => new Intl.NumberFormat("tr-TR", {maximumFractionDigits: 2}).format(n) + " ₺";
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  // --- Türkçe duyarsız normalleştirme
+  const TR = {"ç":"c","ğ":"g","ı":"i","ö":"o","ş":"s","ü":"u","â":"a","î":"i","û":"u","é":"e","'":"","’":""};
+  const norm = s => s.toLocaleLowerCase("tr").replace(/[çğıöşüâîûé'’]/g, c => TR[c]).replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+
+  const ITEMS = window.MENU.map(([cat, name, price, en], i) => ({
+    id: i, cat, name, price, en,
+    nName: norm(name), hay: norm(name + " " + (en || "") + " " + cat),
+    words: norm(name).split(" ")
+  }));
+  const CATS = [...new Set(ITEMS.map(i => i.cat))];
+
+  // --- Kalıcı durum (bu cihaz)
+  const KEY = "lou-adisyon-v1";
+  let S = {tables: {}, current: null, history: [], waiter: "", custom: [], tableCount: 30, usage: {}};
+  try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+  const tableList = () => [...Array.from({length: S.tableCount}, (_, i) => "Masa " + (i + 1)), ...S.custom];
+  const cur = () => S.current ? (S.tables[S.current] ||= {lines: [], note: "", opened: Date.now()}) : null;
+  const total = t => t ? t.lines.reduce((a, l) => a + l.qty * l.price, 0) : 0;
+  const count = t => t ? t.lines.reduce((a, l) => a + l.qty, 0) : 0;
+
+  // --- Arama
+  function parseInput(raw) {
+    let s = raw.trim(), qty = 1, note = "";
+    const slash = s.indexOf("/");
+    if (slash >= 0) { note = s.slice(slash + 1).trim(); s = s.slice(0, slash).trim(); }
+    let m = s.match(/^(\d{1,2})\s*(?:x|adet|\*)?\s+(.+)$/i);
+    if (m) { qty = +m[1]; s = m[2]; }
+    else if ((m = s.match(/^(.+?)\s+(?:x|\*)?\s*(\d{1,2})$/i))) { qty = +m[2]; s = m[1]; }
+    return {qty: Math.max(1, Math.min(99, qty)), term: s, note};
+  }
+
+  function search(term) {
+    const q = norm(term);
+    if (!q) return [];
+    const toks = q.split(" ");
+    const out = [];
+    for (const it of ITEMS) {
+      let score = 0, ok = true;
+      for (const t of toks) {
+        const idx = it.hay.indexOf(t);
+        if (idx < 0) {
+          // baş harf kısaltması (örn: "tsk" -> Tavuk Schnitzel... )
+          if (toks.length === 1 && t.length >= 2 && it.words.map(w => w[0]).join("").startsWith(t)) { score += 4; continue; }
+          ok = false; break;
+        }
+        if (it.nName.startsWith(t)) score += 12;
+        else if (it.words.some(w => w.startsWith(t))) score += 8;
+        else if (it.nName.includes(t)) score += 4;
+        else score += 1;
+      }
+      if (!ok) continue;
+      score += Math.min(6, (S.usage[it.id] || 0) * 0.5) - it.nName.length / 100;
+      out.push([score, it]);
+    }
+    return out.sort((a, b) => b[0] - a[0]).slice(0, 30).map(x => x[1]);
+  }
+
+  function highlight(name, term) {
+    const toks = norm(term).split(" ").filter(Boolean);
+    if (!toks.length) return esc(name);
+
+    // normalize keeps length when only letters change; map positions on a char-cleaned copy
+    const clean = name.replace(/[^\p{L}\p{N} ]/gu, " ");
+    const mark = new Array(clean.length).fill(false);
+    const low = clean.toLocaleLowerCase("tr").replace(/[çğıöşüâîûé]/g, c => TR[c]);
+    for (const t of toks) { let i = low.indexOf(t); if (i >= 0) for (let k = i; k < i + t.length; k++) mark[k] = true; }
+    let html = "", open = false;
+    for (let i = 0; i < name.length; i++) {
+      if (mark[i] && !open) { html += "<mark>"; open = true; }
+      if (!mark[i] && open) { html += "</mark>"; open = false; }
+      html += esc(name[i]);
+    }
+    return html + (open ? "</mark>" : "");
+  }
+
+  const qEl = $("#q"), resEl = $("#results");
+  let results = [], active = 0, catFilter = null;
+
+  function renderResults() {
+    const raw = qEl.value;
+    $("#clearQ").style.display = raw ? "block" : "none";
+    const {qty, term, note} = parseInput(raw);
+    if (catFilter && !term) results = ITEMS.filter(i => i.cat === catFilter);
+    else results = search(term);
+    if (!raw.trim() && !catFilter) { resEl.classList.remove("show"); return; }
+    active = Math.min(active, Math.max(0, results.length - 1));
+    const tag = (qty > 1 ? qty + " × " : "") + (note ? " · not: " + note : "");
+    resEl.innerHTML = results.length ? results.map((it, i) => `
+      <button class="res${i === active ? " active" : ""}" data-id="${it.id}" role="option">
+        <span class="n"><div>${highlight(it.name, term)}</div><small>${esc(it.cat)}${i === active && tag ? " — <b>" + esc(tag) + "</b>" : ""}</small></span>
+        <span class="p">${TL(it.price)}</span><span class="plus">+${qty > 1 ? qty : ""}</span>
+      </button>`).join("")
+      : `<div class="empty-res">“${esc(term)}” bulunamadı. Menü dışı ürün eklemek için: <b>${esc(term)} = 150</b> yazıp Enter'a bas.</div>`;
+    resEl.classList.add("show");
+    resEl.querySelector(".active")?.scrollIntoView({block: "nearest"});
+  }
+
+  function addItem(it, qty, note) {
+    if (!S.current) { openTables(); toast("Önce bir masa seç"); return; }
+    const t = cur();
+    note = (note || "").trim();
+    const ex = t.lines.find(l => l.id === it.id && !l.sent && (l.note || "") === note && l.price === it.price);
+    if (ex) ex.qty += qty;
+    else t.lines.push({uid: Date.now() + Math.random(), id: it.id, name: it.name, price: it.price, qty, note, sent: false, at: Date.now()});
+    S.usage[it.id] = (S.usage[it.id] || 0) + qty;
+    save(); renderPad();
+    toast(`${qty} × ${it.name} eklendi`);
+  }
+
+  function submitInput() {
+    const raw = qEl.value.trim();
+    if (!raw) return;
+    // Menü dışı ürün: "ad = fiyat"
+    const custom = raw.match(/^(?:(\d{1,2})\s+)?(.+?)\s*=\s*(\d+(?:[.,]\d+)?)\s*(?:\/(.*))?$/);
+    if (custom) {
+      addItem({id: "c:" + norm(custom[2]), name: custom[2].trim(), price: parseFloat(custom[3].replace(",", "."))}, +(custom[1] || 1), custom[4]);
+      resetSearch(); return;
+    }
+    const {qty, note} = parseInput(raw);
+    if (results[active]) { addItem(results[active], qty, note); resetSearch(); }
+  }
+  function resetSearch() { qEl.value = ""; active = 0; catFilter = null; renderCats(); renderResults(); qEl.focus(); }
+
+  qEl.addEventListener("input", () => { active = 0; if (qEl.value) { catFilter = null; renderCats(); } renderResults(); });
+  qEl.addEventListener("focus", renderResults);
+  qEl.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") { active = Math.min(active + 1, results.length - 1); renderResults(); e.preventDefault(); }
+    else if (e.key === "ArrowUp") { active = Math.max(active - 1, 0); renderResults(); e.preventDefault(); }
+    else if (e.key === "Enter") { submitInput(); e.preventDefault(); }
+    else if (e.key === "Escape") { resetSearch(); qEl.blur(); }
+  });
+  resEl.addEventListener("pointerdown", e => e.preventDefault()); // odak kaybını engelle
+  resEl.addEventListener("click", e => {
+    const b = e.target.closest(".res"); if (!b) return;
+    const {qty, note} = parseInput(qEl.value);
+    addItem(ITEMS[+b.dataset.id], qty, note);
+    if (catFilter && !parseInput(qEl.value).term) { qEl.value = ""; renderResults(); } else resetSearch();
+  });
+  $("#clearQ").onclick = resetSearch;
+  document.addEventListener("click", e => { if (!e.target.closest(".search-wrap") && !e.target.closest(".cats")) { resEl.classList.remove("show"); } });
+
+  function renderCats() {
+    $("#cats").innerHTML = CATS.map(c => `<button class="cat" data-c="${esc(c)}" style="${c === catFilter ? "background:var(--accent);color:var(--accent-ink)" : ""}">${esc(c)}</button>`).join("");
+  }
+  $("#cats").addEventListener("click", e => {
+    const b = e.target.closest(".cat"); if (!b) return;
+    catFilter = catFilter === b.dataset.c ? null : b.dataset.c;
+    qEl.value = ""; active = 0; renderCats(); renderResults();
+  });
+
+  // --- Not defteri (adisyon)
+  function renderPad() {
+    const t = cur(), pad = $("#pad");
+    $("#tableName").textContent = S.current || "Masa seç";
+    if (!t) {
+      pad.innerHTML = `<div class="pad-empty"><div class="big">Masa seçilmedi</div>Sağ üstten bir masa seç, sonra ürün yazmaya başla.<div style="margin-top:14px"><button class="btn primary" id="pickT">🍽 Masa seç</button></div></div>`;
+      $("#pickT").onclick = openTables;
+    } else {
+      const opened = new Date(t.opened).toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"});
+      const lines = t.lines.map(l => `
+        <li class="ln${l.sent ? "" : " new"}" data-uid="${l.uid}">
+          <span class="q">${l.qty}</span>
+          <button class="body" data-edit>
+            <div class="nm">${esc(l.name)}</div>
+            ${l.note ? `<div class="note">↳ ${esc(l.note)}</div>` : ""}
+            <div class="st${l.sent ? " sent" : ""}">${l.sent ? "✓ mutfağa gitti " + new Date(l.sent).toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"}) : "● yeni"} · ${l.price ? TL(l.price) : "ikram"}</div>
+          </button>
+          <span class="amt">${TL(l.qty * l.price)}</span>
+          <span class="stepper"><button data-dec aria-label="Azalt">−</button><button data-inc aria-label="Arttır">+</button></span>
+        </li>`).join("");
+      pad.innerHTML = `
+        <div class="pad-head"><div class="pad-title">${esc(S.current)}</div>
+          <div class="pad-meta">Açılış ${opened}${S.waiter ? "<br>" + esc(S.waiter) : ""}</div></div>
+        ${t.lines.length ? `<ul class="lines">${lines}</ul>` : `<div class="pad-empty"><div class="big">Adisyon boş</div>Yukarıya ürün adını yaz. <br><b>2 menemen</b> → 2 adet ekler · <b>sezar / sossuz</b> → notlu ekler · <b>Doğum günü pastası = 500</b> → menü dışı ürün</div>`}
+        <div class="pad-foot">
+          <input class="table-note" id="tNote" placeholder="✎ Masa notu (kişi sayısı, alerji…)" value="${esc(t.note || "")}">
+          <div class="row total"><span>Toplam · ${count(t)} ürün</span><span>${TL(total(t))}</span></div>
+        </div>`;
+      $("#tNote").oninput = e => { t.note = e.target.value; save(); };
+    }
+    const unsent = t ? t.lines.filter(l => !l.sent).reduce((a, l) => a + l.qty, 0) : 0;
+    $("#barTotal").textContent = TL(total(t));
+    $("#barInfo").textContent = t ? `${S.current} · ${count(t)} ürün` : "Toplam";
+    $("#sendBtn").textContent = unsent ? `🔔 Mutfağa (${unsent})` : "🔔 Mutfağa";
+    $("#sendBtn").disabled = !unsent;
+    $("#payBtn").disabled = !t || !t.lines.length;
+  }
+
+  $("#pad").addEventListener("click", e => {
+    const li = e.target.closest(".ln"); if (!li) return;
+    const t = cur(), l = t.lines.find(x => String(x.uid) === li.dataset.uid); if (!l) return;
+    if (e.target.closest("[data-inc]")) { l.qty++; save(); renderPad(); }
+    else if (e.target.closest("[data-dec]")) {
+      if (l.qty > 1) l.qty--;
+      else if (l.sent && !confirm(`"${l.name}" mutfağa gitti. Yine de silinsin mi?`)) return;
+      else t.lines.splice(t.lines.indexOf(l), 1);
+      save(); renderPad();
+    } else if (e.target.closest("[data-edit]")) openLine(l);
+  });
+
+  // --- Satır düzenleme
+  let editing = null, eQty = 1;
+  const QUICK = ["az pişmiş", "orta", "iyi pişmiş", "acısız", "soğansız", "sossuz", "sos ayrı", "glutensiz", "buzsuz", "şekersiz", "laktozsuz süt", "önce gelsin", "sonra gelsin", "ikram"];
+  function openLine(l) {
+    editing = l; eQty = l.qty;
+    $("#lsName").textContent = l.name; $("#lsQty").textContent = eQty;
+    $("#lsNote").value = l.note || ""; $("#lsPrice").value = l.price;
+    $("#lsQuick").innerHTML = QUICK.map(q => `<button>${q}</button>`).join("");
+    show("#lineSheet");
+  }
+  $("#lsMinus").onclick = () => { eQty = Math.max(1, eQty - 1); $("#lsQty").textContent = eQty; };
+  $("#lsPlus").onclick = () => { eQty++; $("#lsQty").textContent = eQty; };
+  $("#lsQuick").onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.textContent === "ikram") { $("#lsPrice").value = 0; return; }
+    const n = $("#lsNote"); n.value = n.value ? n.value + ", " + b.textContent : b.textContent;
+  };
+  $("#lsSave").onclick = () => {
+    const changedNote = ($("#lsNote").value.trim()) !== (editing.note || "");
+    editing.qty = eQty; editing.note = $("#lsNote").value.trim();
+    const p = parseFloat($("#lsPrice").value); if (!isNaN(p) && p >= 0) editing.price = p;
+    if (changedNote && editing.sent) editing.sent = false; // değişiklik mutfağa tekrar gitsin
+    save(); renderPad(); hide("#lineSheet");
+  };
+  $("#lsDelete").onclick = () => {
+    const t = cur(); t.lines.splice(t.lines.indexOf(editing), 1); save(); renderPad(); hide("#lineSheet"); toast("Silindi");
+  };
+
+  // --- Masalar
+  function openTables() {
+    $("#tableGrid").innerHTML = tableList().map(n => {
+      const t = S.tables[n], open = t && t.lines.length;
+      return `<button class="tbl${open ? " open" : ""}${n === S.current ? " cur" : ""}" data-t="${esc(n)}"><b>${esc(n.replace(/^Masa /, ""))}</b><small>${open ? TL(total(t)) : "boş"}</small></button>`;
+    }).join("");
+    show("#tablesSheet");
+  }
+  $("#tableBtn").onclick = openTables;
+  $("#tableGrid").onclick = e => {
+    const b = e.target.closest(".tbl"); if (!b) return;
+    selectTable(b.dataset.t);
+  };
+  function selectTable(n) {
+    // önceki boş masayı temizle
+    if (S.current && S.tables[S.current] && !S.tables[S.current].lines.length && !S.tables[S.current].note) delete S.tables[S.current];
+    S.current = n; cur(); save(); renderPad(); hide("#tablesSheet"); qEl.focus();
+  }
+  $("#addTable").onclick = () => {
+    const n = $("#newTable").value.trim(); if (!n) return;
+    if (!tableList().includes(n)) S.custom.push(n);
+    $("#newTable").value = ""; selectTable(n);
+  };
+
+  // --- Mutfağa gönder
+  $("#sendBtn").onclick = () => {
+    const t = cur(); if (!t) return;
+    const now = Date.now(), list = t.lines.filter(l => !l.sent);
+    if (!list.length) return;
+    list.forEach(l => l.sent = now);
+    save(); renderPad();
+    printTicket("kitchen", list);
+    toast(`${list.length} kalem mutfağa gönderildi`);
+  };
+
+  // --- Hesap
+  let disc = 0, split = 1, method = "Nakit";
+  function payCalc() {
+    const sub = total(cur()), tot = Math.round(sub * (100 - disc)) / 100;
+    $("#paySub").textContent = TL(sub);
+    $("#payTotal").textContent = TL(tot) + (disc ? ` (−%${disc})` : "");
+    $("#perPerson").textContent = TL(Math.ceil(tot / split * 100) / 100);
+    const cash = parseFloat($("#cashIn").value);
+    $("#change").textContent = isNaN(cash) ? "–" : (cash >= tot ? TL(cash - tot) : "Eksik: " + TL(tot - cash));
+    $("#cashField").style.display = method === "Kart" ? "none" : "";
+    return {sub, tot};
+  }
+  $("#payBtn").onclick = () => {
+    disc = 0; split = 1; method = "Nakit"; $("#cashIn").value = "";
+    $("#payTable").textContent = S.current;
+    $("#splitSeg").innerHTML = [1, 2, 3, 4, 5, 6, 8].map(n => `<button data-s="${n}" class="${n === 1 ? "on" : ""}">${n}</button>`).join("");
+    [...$("#discSeg").children].forEach(b => b.classList.toggle("on", b.dataset.d === "0"));
+    [...$("#methodSeg").children].forEach(b => b.classList.toggle("on", b.dataset.m === "Nakit"));
+    payCalc(); show("#paySheet");
+  };
+  const segPick = (sel, attr, fn) => $(sel).addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    [...$(sel).children].forEach(x => x.classList.toggle("on", x === b)); fn(b.dataset[attr]); payCalc();
+  });
+  segPick("#discSeg", "d", v => disc = +v);
+  segPick("#splitSeg", "s", v => split = +v);
+  segPick("#methodSeg", "m", v => method = v);
+  $("#cashIn").oninput = payCalc;
+  $("#printBtn").onclick = () => { printTicket("bill", cur().lines, payCalc()); };
+  $("#closeBtn").onclick = () => {
+    const t = cur(), {sub, tot} = payCalc();
+    if (t.lines.some(l => !l.sent) && !confirm("Mutfağa gönderilmemiş ürünler var. Yine de hesabı kapat?")) return;
+    S.history.unshift({table: S.current, lines: t.lines, sub, total: tot, disc, method, at: Date.now(), opened: t.opened});
+    delete S.tables[S.current]; S.current = null; save();
+    hide("#paySheet"); renderPad(); toast("Hesap kapatıldı ✓ " + TL(tot)); openTables();
+  };
+
+  // --- Yazdırma (adisyon / mutfak fişi)
+  function printTicket(kind, lines, calc) {
+    const t = cur(), d = new Date();
+    const rows = lines.map(l => `<tr><td>${l.qty} x ${esc(l.name)}${l.note ? `<br>&nbsp;&nbsp;* ${esc(l.note)}` : ""}</td>${kind === "bill" ? `<td class="r">${TL(l.qty * l.price)}</td>` : ""}</tr>`).join("");
+    $("#print").innerHTML = kind === "kitchen" ? `
+      <h1>MUTFAK</h1><div class="c"><b>${esc(S.current)}</b> · ${d.toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"})}${S.waiter ? " · " + esc(S.waiter) : ""}</div><hr>
+      <table style="font-size:14px">${rows}</table>${t.note ? `<hr>Not: ${esc(t.note)}` : ""}` : `
+      <h1>LOU Cafe Bistro</h1><div class="c">ADİSYON</div><hr>
+      <div>${esc(S.current)}${S.waiter ? " · Garson: " + esc(S.waiter) : ""}<br>${d.toLocaleString("tr-TR")}</div><hr>
+      <table>${rows}</table><hr>
+      <table><tr><td>Ara toplam</td><td class="r">${TL(calc.sub)}</td></tr>
+      ${disc ? `<tr><td>İndirim %${disc}</td><td class="r">−${TL(calc.sub - calc.tot)}</td></tr>` : ""}
+      <tr><td><b>TOPLAM</b></td><td class="r"><b>${TL(calc.tot)}</b></td></tr>
+      ${split > 1 ? `<tr><td>Kişi başı (${split})</td><td class="r">${TL(Math.ceil(calc.tot / split * 100) / 100)}</td></tr>` : ""}</table>
+      <hr><div class="c">Fiyatlara tüm vergiler dahildir.<br>Bu belge mali değeri olmayan bilgi fişidir.<br>Afiyet olsun!</div>`;
+    if (kind === "bill" || S.printKitchen) window.print();
+  }
+
+  // --- Gün sonu
+  function openMore() {
+    const today = new Date().toDateString(), h = S.history.filter(x => new Date(x.at).toDateString() === today);
+    const by = m => h.filter(x => x.method === m).reduce((a, x) => a + x.total, 0);
+    $("#dayCount").textContent = h.length;
+    $("#dayCash").textContent = TL(by("Nakit")); $("#dayCard").textContent = TL(by("Kart")); $("#dayMix").textContent = TL(by("Karışık"));
+    $("#dayTotal").textContent = TL(h.reduce((a, x) => a + x.total, 0));
+    $("#histList").innerHTML = h.length ? h.map(x => `<li><span>${esc(x.table)}<br><small>${new Date(x.at).toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"})} · ${x.method}${x.disc ? " · %" + x.disc : ""} · ${x.lines.reduce((a, l) => a + l.qty, 0)} ürün</small></span><b>${TL(x.total)}</b></li>`).join("") : `<li><small>Bugün kapanan hesap yok.</small></li>`;
+    $("#waiter").value = S.waiter || "";
+    $("#menuDate").textContent = window.MENU_DATE;
+    show("#moreSheet");
+  }
+  $("#moreBtn").onclick = openMore;
+  $("#waiter").oninput = e => { S.waiter = e.target.value; save(); renderPad(); };
+  $("#resetDay").onclick = () => { if (confirm("Kapanan hesap geçmişi silinsin mi? (Açık masalar kalır)")) { S.history = []; save(); openMore(); } };
+  $("#themeBtn").onclick = () => {
+    const r = document.documentElement, dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    const curT = r.dataset.theme || (dark ? "dark" : "light");
+    r.dataset.theme = curT === "dark" ? "light" : "dark";
+    try { localStorage.setItem(KEY + "-theme", r.dataset.theme); } catch (e) {}
+  };
+  try { const th = localStorage.getItem(KEY + "-theme"); if (th) document.documentElement.dataset.theme = th; } catch (e) {}
+
+  // --- Tüm menü
+  $("#browseBtn").onclick = () => {
+    $("#browseList").innerHTML = CATS.map(c => `<ul class="menu-list"><h3>${esc(c)}</h3>${ITEMS.filter(i => i.cat === c).map(it => `<button class="res" data-id="${it.id}"><span class="n"><div>${esc(it.name)}</div>${it.en ? `<small>${esc(it.en)}</small>` : ""}</span><span class="p">${TL(it.price)}</span><span class="plus">+</span></button>`).join("")}</ul>`).join("");
+    hide("#moreSheet"); show("#browseSheet");
+  };
+  $("#browseList").onclick = e => { const b = e.target.closest(".res"); if (b) addItem(ITEMS[+b.dataset.id], 1, ""); };
+
+  // --- Yardımcılar
+  function show(s) { $(s).classList.add("show"); }
+  function hide(s) { $(s).classList.remove("show"); }
+  document.querySelectorAll(".scrim").forEach(sc => sc.addEventListener("click", e => {
+    if (e.target === sc || e.target.closest("[data-close]")) sc.classList.remove("show");
+  }));
+  let tt;
+  function toast(msg) { const el = $("#toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("show"), 1600); }
+
+  renderCats(); renderPad();
+  if (!S.current) openTables();
+})();
+</script>
+</body>
+</html>
