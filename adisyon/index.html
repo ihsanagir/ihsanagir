@@ -53,6 +53,11 @@ header{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 16px 8
 .res .n div{font-weight:600}
 .res .n small{color:var(--muted);font-size:12px}
 .res .p{font-variant-numeric:tabular-nums;font-weight:600}
+.info{flex:none;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);color:var(--muted);display:grid;place-items:center;font:600 13px/1 Georgia,serif;font-style:italic}
+.info.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.desc{margin-top:5px;font-size:13px;line-height:1.4;color:var(--ink);opacity:.8;font-weight:400}
+.desc em{font-style:normal;font-weight:600;color:var(--accent);opacity:1}
+.ls-desc{margin:-4px 0 10px;font-size:13.5px;line-height:1.45;color:var(--muted)}
 .res .plus{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;flex:none}
 .res mark{background:transparent;color:inherit;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
 .empty-res{padding:14px;color:var(--muted)}
@@ -185,7 +190,7 @@ main{flex:1;padding:12px 16px 120px}
              placeholder="Ürün yaz… örn: 2 sezar / sossuz" enterkeyhint="done" aria-label="Ürün ara ve ekle">
       <button class="clear" id="clearQ" aria-label="Temizle">×</button>
     </div>
-    <div class="groups" id="groups"><button class="gbtn" data-g="food">🍽 Yiyecekler <span class="chev">▼</span></button><button class="gbtn" data-g="drink">🥤 İçecekler <span class="chev">▼</span></button></div>
+    <div class="groups" id="groups"><button class="gbtn" data-g="food">Yiyecekler <span class="chev">▼</span></button><button class="gbtn" data-g="drink">İçecekler <span class="chev">▼</span></button></div>
     <div class="cats" id="cats"></div>
     <div class="results" id="results" role="listbox"></div>
   </header>
@@ -217,6 +222,7 @@ main{flex:1;padding:12px 16px 120px}
 <!-- Satır düzenle -->
 <div class="scrim" id="lineSheet"><div class="sheet">
   <div class="sheet-top"><h2 id="lsName">Ürün</h2><button class="btn ghost" data-close>Kapat</button></div>
+  <p class="ls-desc" id="lsDesc"></p>
   <div class="big-qty"><button id="lsMinus">−</button><span id="lsQty">1</span><button id="lsPlus">+</button></div>
   <div class="field"><label>Not (mutfağa)</label><input class="input" id="lsNote" placeholder="örn: az pişmiş, soğansız">
     <div class="quick" id="lsQuick"></div></div>
@@ -308,7 +314,8 @@ main{flex:1;padding:12px 16px 120px}
   const slug = name => norm(name).replace(/ /g, "-").slice(0, 80) || "t" + Math.abs([...name].reduce((a, c) => a * 31 + c.charCodeAt(0) | 0, 7));
 
   const ITEMS = window.MENU.map(([cat, name, price, en], i) => ({
-    id: i, cat, name, price, en, nName: norm(name), hay: norm(name + " " + (en || "") + " " + cat), words: norm(name).split(" ")
+    id: i, cat, name, price, en, desc: (window.MENU_DESC || {})[name] || "",
+    nName: norm(name), hay: norm(name + " " + (en || "") + " " + cat + " " + ((window.MENU_DESC || {})[name] || "")), words: norm(name).split(" ")
   }));
   const CATS = [...new Set(ITEMS.map(i => i.cat))];
   const DRINK_CATS = ["Kokteyl", "Şarap", "Viski & Sert İçki", "Likör", "Bira", "Taze İçecek", "Soğuk İçecek", "Çay", "Kahve"];
@@ -501,7 +508,11 @@ main{flex:1;padding:12px 16px 120px}
   }
 
   const qEl = $("#q"), resEl = $("#results");
-  let results = [], active = 0, catFilter = null;
+  let results = [], active = 0, catFilter = null, infoOpen = null;
+  // İçerik: "Köfte 140 gr · a, b" → gramaj vurgulu
+  const descHTML = d => { const i = d.indexOf(" · "); return i > 0 ? `<em>${esc(d.slice(0, i))}</em> · ${esc(d.slice(i + 3))}` : esc(d); };
+  const infoBtn = it => it.desc ? `<span class="info${infoOpen === it.id ? " on" : ""}" data-info role="button" aria-label="İçerik">i</span>` : "";
+  const descBlock = it => infoOpen === it.id && it.desc ? `<div class="desc">${descHTML(it.desc)}</div>` : "";
   function renderResults() {
     const raw = qEl.value;
     $("#clearQ").style.display = raw ? "block" : "none";
@@ -512,8 +523,8 @@ main{flex:1;padding:12px 16px 120px}
     const tag = (qty > 1 ? qty + " × " : "") + (note ? " · not: " + note : "");
     resEl.innerHTML = results.length ? results.map((it, i) => `
       <button class="res${i === active ? " active" : ""}" data-id="${it.id}" role="option">
-        <span class="n"><div>${highlight(it.name, term)}</div><small>${esc(it.cat)}${i === active && tag ? " — <b>" + esc(tag) + "</b>" : ""}</small></span>
-        <span class="p">${TL(it.price)}</span><span class="plus">+${qty > 1 ? qty : ""}</span>
+        <span class="n"><div>${highlight(it.name, term)}</div><small>${esc(it.cat)}${i === active && tag ? " — <b>" + esc(tag) + "</b>" : ""}</small>${descBlock(it)}</span>
+        ${infoBtn(it)}<span class="p">${TL(it.price)}</span><span class="plus">+${qty > 1 ? qty : ""}</span>
       </button>`).join("")
       : `<div class="empty-res">“${esc(term)}” bulunamadı. Menü dışı ürün için: <b>${esc(term)} = 150</b> yazıp Enter'a bas.</div>`;
     resEl.classList.add("show");
@@ -555,6 +566,7 @@ main{flex:1;padding:12px 16px 120px}
   resEl.addEventListener("pointerdown", e => e.preventDefault());
   resEl.addEventListener("click", e => {
     const b = e.target.closest(".res"); if (!b) return;
+    if (e.target.closest("[data-info]")) { infoOpen = infoOpen === +b.dataset.id ? null : +b.dataset.id; const st = resEl.scrollTop; renderResults(); resEl.scrollTop = st; return; }
     const {qty, note, term} = parseInput(qEl.value);
     addItem(ITEMS[+b.dataset.id], qty, note);
     if (catFilter && !term) { qEl.value = ""; renderResults(); } else resetSearch();
@@ -642,6 +654,8 @@ main{flex:1;padding:12px 16px 120px}
   function openLine(l) {
     editing = l; eQty = l.qty;
     $("#lsName").textContent = l.name; $("#lsQty").textContent = eQty;
+    const it = typeof l.id === "number" ? ITEMS[l.id] : null;
+    $("#lsDesc").innerHTML = it && it.desc ? descHTML(it.desc) : ""; $("#lsDesc").style.display = it && it.desc ? "" : "none";
     $("#lsNote").value = l.note || ""; $("#lsPrice").value = l.price;
     $("#lsQuick").innerHTML = QUICK.map(q => `<button>${q}</button>`).join("");
     show("#lineSheet");
@@ -820,11 +834,15 @@ main{flex:1;padding:12px 16px 120px}
   $("#resetDay").onclick = async () => { if (confirm("Bugünkü kapanan hesap geçmişi silinsin mi? (Açık masalar kalır)")) { await Store.resetDay(); renderMore(); } };
 
   // ---------- Tüm menü
-  $("#browseBtn").onclick = () => {
-    $("#browseList").innerHTML = [["Yiyecekler", GROUP_CATS.food], ["İçecekler", GROUP_CATS.drink]].map(([gt, cs]) => `<h2 style="margin:18px 0 0">${gt}</h2>` + cs.map(c => `<ul class="menu-list"><h3>${esc(c)}</h3>${ITEMS.filter(i => i.cat === c).map(it => `<button class="res" data-id="${it.id}"><span class="n"><div>${esc(it.name)}</div>${it.en ? `<small>${esc(it.en)}</small>` : ""}</span><span class="p">${TL(it.price)}</span><span class="plus">+</span></button>`).join("")}</ul>`).join("")).join("");
-    hide("#moreSheet"); show("#browseSheet");
+  function renderBrowse() {
+    $("#browseList").innerHTML = [["Yiyecekler", GROUP_CATS.food], ["İçecekler", GROUP_CATS.drink]].map(([gt, cs]) => `<h2 style="margin:18px 0 0">${gt}</h2>` + cs.map(c => `<ul class="menu-list"><h3>${esc(c)}</h3>${ITEMS.filter(i => i.cat === c).map(it => `<button class="res" data-id="${it.id}"><span class="n"><div>${esc(it.name)}</div>${descBlock(it)}</span>${infoBtn(it)}<span class="p">${TL(it.price)}</span><span class="plus">+</span></button>`).join("")}</ul>`).join("")).join("");
+  }
+  $("#browseBtn").onclick = () => { infoOpen = null; renderBrowse(); hide("#moreSheet"); show("#browseSheet"); };
+  $("#browseList").onclick = e => {
+    const b = e.target.closest(".res"); if (!b) return;
+    if (e.target.closest("[data-info]")) { infoOpen = infoOpen === +b.dataset.id ? null : +b.dataset.id; const sh = $("#browseSheet .sheet"), st = sh.scrollTop; renderBrowse(); sh.scrollTop = st; return; }
+    addItem(ITEMS[+b.dataset.id], 1, "");
   };
-  $("#browseList").onclick = e => { const b = e.target.closest(".res"); if (b) addItem(ITEMS[+b.dataset.id], 1, ""); };
 
   // ---------- Yardımcılar
   function show(s) { $(s).classList.add("show"); }

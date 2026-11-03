@@ -11,7 +11,8 @@ Kurulum yok: `index.html` dosyasını tarayıcıda açmanız yeterli (veriler ci
   - `sezar / sossuz` → mutfak notuyla ekler
   - `Doğum günü pastası = 500` → menü dışı ürün
   - ↑/↓ ile öneriler arasında gezin; kategori çiplerinden göz atın.
-- Satıra dokun → adet, not, fiyat (ikram = 0) düzenle. `−`/`+` ile hızlı adet.
+- Ürün listesinde **ⓘ** → içerik ve gramaj (müşteriye önermek için). Arama içeriklerde de çalışır (örn. `avokado`, `vegan`).
+- Satıra dokun → içerik görünür; adet, not, fiyat (ikram = 0) düzenle. `−`/`+` ile hızlı adet.
 - **Mutfağa** → yeni (sarı) kalemleri gönderildi olarak işaretler.
 - **Hesap** → indirim, kişi başı bölüştürme, nakit/kart, para üstü, adisyon yazdırma, masayı kapatma.
 - **TIP** → bahşiş IBAN'ının QR kodu; müşteriye gösterilir. IBAN'ı sayfa sahibi/editörü "IBAN ayarla" ile girer.
