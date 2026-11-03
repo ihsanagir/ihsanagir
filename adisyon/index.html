@@ -11,21 +11,21 @@
 :root{
   --bg:#efe9dc; --paper:#fffdf6; --line:#e3dccb; --margin:#e9a9a2;
   --ink:#1d2421; --muted:#6f756f; --accent:#1f3a34; --accent-ink:#fff;
-  --new:#fff3c4; --ok:#2e7d4f; --danger:#b3261e; --chip:#e7e1d2;
+  --new:#fff3c4; --ok:#2e7d4f; --danger:#b3261e; --chip:#e7e1d2; --tip:#b5476a;
   --shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.08);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#121614; --paper:#1b201e; --line:#2a312e; --margin:#6d3b37;
     --ink:#ece9e1; --muted:#9aa19c; --accent:#7fc4ae; --accent-ink:#0f1513;
-    --new:#3a3418; --ok:#6fcf97; --danger:#ff8a80; --chip:#262d2a;
+    --new:#3a3418; --ok:#6fcf97; --danger:#ff8a80; --chip:#262d2a; --tip:#e88aa8;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.4);
   }
 }
 :root[data-theme="dark"]{
   --bg:#121614; --paper:#1b201e; --line:#2a312e; --margin:#6d3b37;
   --ink:#ece9e1; --muted:#9aa19c; --accent:#7fc4ae; --accent-ink:#0f1513;
-  --new:#3a3418; --ok:#6fcf97; --danger:#ff8a80; --chip:#262d2a;
+  --new:#3a3418; --ok:#6fcf97; --danger:#ff8a80; --chip:#262d2a; --tip:#e88aa8;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box}
@@ -34,13 +34,15 @@ body{background:var(--bg);color:var(--ink);font:15px/1.4 Inter,system-ui,-apple-
 button{font:inherit;color:inherit;cursor:pointer}
 .app{max-width:720px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
 
-/* Header */
 header{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 16px 8px}
 .top{display:flex;align-items:center;gap:8px}
 .brand{font-family:Caveat,cursive;font-size:28px;font-weight:700;letter-spacing:.5px;margin-right:auto;line-height:1}
-.brand small{font-family:Inter,sans-serif;font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0;display:block}
+.brand small{font-family:Inter,sans-serif;font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0;display:flex;align-items:center;gap:5px;margin-top:2px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.live{background:var(--ok)}
 .btn{border:0;border-radius:10px;padding:9px 12px;background:var(--chip);font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.tip{background:var(--tip);color:#fff}
 .btn.ghost{background:transparent}
 .btn.danger{background:transparent;color:var(--danger)}
 .btn:disabled{opacity:.45;cursor:default}
@@ -52,7 +54,6 @@ header{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 16px 8
 .search::placeholder{color:var(--muted)}
 .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:22px;color:var(--muted);width:36px;height:36px;display:none}
 .hint{font-size:12px;color:var(--muted);margin:6px 2px 0}
-.hint code{background:var(--chip);border-radius:4px;padding:0 4px;font-size:11.5px}
 
 .results{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--paper);border-radius:14px;box-shadow:var(--shadow);max-height:min(60vh,460px);overflow:auto;display:none;z-index:30}
 .results.show{display:block}
@@ -70,8 +71,8 @@ header{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 16px 8
 .cats{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
 .cats::-webkit-scrollbar{display:none}
 .cat{border:0;border-radius:999px;padding:6px 11px;background:var(--chip);font-size:13px;font-weight:500;white-space:nowrap}
+.cat.on{background:var(--accent);color:var(--accent-ink)}
 
-/* Notepad */
 main{flex:1;padding:4px 16px 120px}
 .pad{background:var(--paper);border-radius:6px 6px 14px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden;min-height:320px}
 .pad::before{content:"";position:absolute;left:44px;top:0;bottom:0;width:2px;background:var(--margin);opacity:.7}
@@ -97,29 +98,30 @@ main{flex:1;padding:4px 16px 120px}
 .row.total{font-size:20px;font-weight:700;padding-top:6px;border-top:2px dashed var(--line);margin-top:4px}
 .table-note{width:100%;border:0;border-bottom:1px dashed var(--line);background:transparent;color:var(--ink);font-family:Caveat,cursive;font-size:21px;padding:6px 0;outline:none}
 
-/* Bottom bar */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--bg);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
-.bar-in{max-width:688px;margin:0 auto;display:flex;align-items:center;gap:8px}
-.bar .sum{margin-right:auto;line-height:1.1}
-.bar .sum small{color:var(--muted);font-size:12px;display:block}
-.bar .sum b{font-size:22px;font-variant-numeric:tabular-nums}
+.bar-in{max-width:688px;margin:0 auto;display:flex;align-items:center;gap:6px}
+.bar .sum{margin-right:auto;line-height:1.1;min-width:0}
+.bar .sum small{color:var(--muted);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .sum b{font-size:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar .btn{padding:10px 11px}
 
-/* Sheets */
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none;align-items:flex-end;justify-content:center}
 .scrim.show{display:flex}
-.sheet{background:var(--paper);width:100%;max-width:720px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom))}
+.sheet{background:var(--paper);width:100%;max-width:720px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom))}
 .sheet h2{margin:0 0 12px;font-family:Caveat,cursive;font-size:30px;line-height:1}
 .sheet-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
-.tbl{border:0;border-radius:12px;background:var(--chip);padding:12px 6px;text-align:center;min-height:70px}
-.tbl b{display:block;font-size:17px}
-.tbl small{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.grp{margin:4px 0 14px}
+.grp-t{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.tbl{border:0;border-radius:12px;background:var(--chip);padding:10px 2px;text-align:center;min-height:62px;min-width:0}
+.tbl b{display:block;font-size:19px}
+.tbl small{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tbl.open{background:var(--accent);color:var(--accent-ink)}
 .tbl.open small{color:inherit;opacity:.85}
 .tbl.cur{outline:3px solid var(--margin);outline-offset:2px}
 .field{display:flex;flex-direction:column;gap:4px;margin:10px 0}
 .field label{font-size:12px;color:var(--muted);font-weight:600}
-.input{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;outline:none}
+.input{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;outline:none;min-width:0}
 .input:focus{border-color:var(--accent)}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
 .seg button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px;font-weight:600}
@@ -137,10 +139,21 @@ main{flex:1;padding:4px 16px 120px}
 .menu-list{list-style:none;padding:0;margin:0}
 .menu-list h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 4px}
 
+/* TIP */
+#tipSheet .sheet{max-height:100vh;height:100%;border-radius:0;display:flex;flex-direction:column}
+.tip-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:8px 0}
+.tip-title{font-family:Caveat,cursive;font-size:46px;font-weight:700;line-height:1;color:var(--tip)}
+.tip-sub{color:var(--muted);max-width:340px;margin:0}
+.qr-card{background:#fff;padding:16px;border-radius:18px;box-shadow:var(--shadow);line-height:0}
+.qr-card img,.qr-card canvas{display:block;width:min(66vw,300px)!important;height:min(66vw,300px)!important;image-rendering:pixelated}
+.iban{white-space:nowrap;font:600 clamp(13px,4.2vw,18px)/1.3 ui-monospace,"SF Mono",Menlo,Consolas,monospace;letter-spacing:.04em;word-spacing:.15em}
+.holder{font-weight:600}
+.tip-empty{color:var(--muted);max-width:320px}
+.err{color:var(--danger);font-size:13px}
+
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-weight:600;opacity:0;transition:.2s;z-index:60;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* Print: receipt */
 #print{display:none}
 @media print{
   body{background:#fff}
@@ -155,7 +168,7 @@ main{flex:1;padding:4px 16px 120px}
 }
 @media (max-width:420px){
   .ln .stepper button{width:30px;height:30px}
-  .brand small{display:none}
+  .bar .btn{padding:10px 9px;font-size:14px}
 }
 </style>
 </head>
@@ -163,7 +176,7 @@ main{flex:1;padding:4px 16px 120px}
 <div class="app">
   <header>
     <div class="top">
-      <div class="brand">LOU Adisyon<small>Garson sipariş defteri</small></div>
+      <div class="brand">LOU Adisyon<small><span class="dot" id="liveDot"></span><span id="liveTxt">Bağlanıyor…</span></small></div>
       <button class="btn table-btn" id="tableBtn" aria-label="Masa seç">🍽 <b id="tableName">Masa seç</b></button>
       <button class="btn ghost" id="moreBtn" aria-label="Menü">☰</button>
     </div>
@@ -184,16 +197,17 @@ main{flex:1;padding:4px 16px 120px}
 <div class="bar">
   <div class="bar-in">
     <div class="sum"><small id="barInfo">Toplam</small><b id="barTotal">0 ₺</b></div>
-    <button class="btn" id="sendBtn">🔔 Mutfağa</button>
+    <button class="btn" id="sendBtn">🔔 Mutfak</button>
     <button class="btn primary" id="payBtn">💳 Hesap</button>
+    <button class="btn tip" id="tipBtn">💝 TIP</button>
   </div>
 </div>
 
 <!-- Masa seçimi -->
 <div class="scrim" id="tablesSheet"><div class="sheet">
   <div class="sheet-top"><h2>Masalar</h2><button class="btn ghost" data-close>Kapat</button></div>
-  <div class="grid" id="tableGrid"></div>
-  <div class="field"><label>Özel masa / isim ekle (Bahçe 3, Paket – Ahmet…)</label>
+  <div id="tableGroups"></div>
+  <div class="field"><label>Özel masa / isim aç (Bahçe 3, Paket – Ahmet…)</label>
     <div style="display:flex;gap:8px"><input class="input" id="newTable" style="flex:1" placeholder="Masa adı"><button class="btn primary" id="addTable">Aç</button></div>
   </div>
 </div></div>
@@ -223,7 +237,21 @@ main{flex:1;padding:4px 16px 120px}
   <div class="field" id="cashField"><label>Alınan nakit (para üstü)</label>
     <input class="input" id="cashIn" type="number" inputmode="decimal" placeholder="örn: 2000">
     <div class="row" style="margin-top:4px"><span>Para üstü</span><b id="change">–</b></div></div>
-  <div class="actions"><button class="btn" id="printBtn">🖨 Yazdır</button><button class="btn primary" id="closeBtn">✓ Ödendi, masayı kapat</button></div>
+  <div class="actions"><button class="btn" id="printBtn">🖨 Yazdır</button><button class="btn tip" id="payTipBtn">💝 TIP QR</button><button class="btn primary" id="closeBtn" style="flex-basis:100%">✓ Ödendi, masayı kapat</button></div>
+</div></div>
+
+<!-- TIP -->
+<div class="scrim" id="tipSheet"><div class="sheet">
+  <div class="sheet-top"><span></span><button class="btn ghost" data-close>Kapat</button></div>
+  <div class="tip-body" id="tipView"></div>
+  <div id="tipEdit" style="display:none">
+    <div class="field"><label>IBAN</label><input class="input" id="tipIban" placeholder="TR00 0000 0000 0000 0000 0000 00" autocomplete="off" style="font-family:ui-monospace,Menlo,monospace"></div>
+    <div class="field"><label>Alıcı adı soyadı</label><input class="input" id="tipName" placeholder="Hesap sahibinin adı"></div>
+    <div class="field"><label>Müşteriye mesaj (isteğe bağlı)</label><input class="input" id="tipMsg" placeholder="Teşekkür ederiz! ❤"></div>
+    <div class="err" id="tipErr"></div>
+    <div class="actions"><button class="btn" id="tipCancel">Vazgeç</button><button class="btn primary" id="tipSave">Kaydet</button></div>
+  </div>
+  <div class="actions" id="tipActions"><button class="btn" id="tipCopy">📋 IBAN'ı kopyala</button><button class="btn" id="tipEditBtn">✎ IBAN ayarla</button></div>
 </div></div>
 
 <!-- Diğer menü -->
@@ -234,26 +262,27 @@ main{flex:1;padding:4px 16px 120px}
   <div class="row"><span>Kart</span><b id="dayCard"></b></div>
   <div class="row"><span>Karışık</span><b id="dayMix"></b></div>
   <div class="row total"><span>Toplam ciro</span><span id="dayTotal"></span></div>
-  <h3 style="font-size:13px;color:var(--muted);margin:16px 0 0">KAPANAN HESAPLAR</h3>
+  <h3 style="font-size:13px;color:var(--muted);margin:16px 0 0">BUGÜN KAPANAN HESAPLAR</h3>
   <ul class="hist" id="histList"></ul>
-  <div class="field"><label>Garson adı</label><input class="input" id="waiter" placeholder="Adınız (adisyonda görünür)"></div>
+  <div class="field"><label>Garson adı (bu cihaz)</label><input class="input" id="waiter" placeholder="Adınız (adisyonda görünür)"></div>
   <div class="actions">
     <button class="btn" id="browseBtn">📖 Tüm menü</button>
     <button class="btn" id="themeBtn">🌓 Tema</button>
     <button class="btn danger" id="resetDay">Günü sıfırla</button>
   </div>
-  <p class="hint">Menü fiyatları: <span id="menuDate"></span>. Veriler bu cihazda saklanır.</p>
+  <p class="hint">Menü fiyatları: <span id="menuDate"></span>. <span id="modeHint"></span></p>
 </div></div>
 
 <!-- Menü göz at -->
 <div class="scrim" id="browseSheet"><div class="sheet">
-  <div class="sheet-top"><h2 id="browseTitle">Menü</h2><button class="btn ghost" data-close>Kapat</button></div>
+  <div class="sheet-top"><h2>Menü</h2><button class="btn ghost" data-close>Kapat</button></div>
   <div id="browseList"></div>
 </div></div>
 
 <div class="toast" id="toast"></div>
 <div id="print"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="menu.js"></script>
 <script>
 (() => {
@@ -261,30 +290,166 @@ main{flex:1;padding:4px 16px 120px}
   const $ = s => document.querySelector(s);
   const TL = n => new Intl.NumberFormat("tr-TR", {maximumFractionDigits: 2}).format(n) + " ₺";
   const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const hm = t => new Date(t).toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"});
+  const dayKey = (t = Date.now()) => { const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const uid = () => "l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-  // --- Türkçe duyarsız normalleştirme
+  // ---------- Masa düzeni
+  const GROUPS = [
+    {title: "1. Bölüm", tables: [10, 20, 30, 11, 14, 12, 13, 21, 23, 24, 25, 31, 32, 33, 34]},
+    {title: "2. Bölüm", tables: [40, 50, 60, 70, 41, 42, 43, 44, 51, 82, 54, 61, 81, 71, 80]},
+  ];
+  const FIXED = GROUPS.flatMap(g => g.tables.map(n => "Masa " + n));
+
+  // ---------- Türkçe duyarsız arama
   const TR = {"ç":"c","ğ":"g","ı":"i","ö":"o","ş":"s","ü":"u","â":"a","î":"i","û":"u","é":"e","'":"","’":""};
   const norm = s => s.toLocaleLowerCase("tr").replace(/[çğıöşüâîûé'’]/g, c => TR[c]).replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+  const slug = name => norm(name).replace(/ /g, "-").slice(0, 80) || "t" + Math.abs([...name].reduce((a, c) => a * 31 + c.charCodeAt(0) | 0, 7));
 
   const ITEMS = window.MENU.map(([cat, name, price, en], i) => ({
-    id: i, cat, name, price, en,
-    nName: norm(name), hay: norm(name + " " + (en || "") + " " + cat),
-    words: norm(name).split(" ")
+    id: i, cat, name, price, en, nName: norm(name), hay: norm(name + " " + (en || "") + " " + cat), words: norm(name).split(" ")
   }));
   const CATS = [...new Set(ITEMS.map(i => i.cat))];
 
-  // --- Kalıcı durum (bu cihaz)
-  const KEY = "lou-adisyon-v1";
-  let S = {tables: {}, current: null, history: [], waiter: "", custom: [], tableCount: 30, usage: {}};
-  try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  // ---------- Cihaza özel ayarlar
+  const LKEY = "lou-adisyon-local";
+  let L = {current: null, waiter: "", usage: {}};
+  try { Object.assign(L, JSON.parse(localStorage.getItem(LKEY) || "{}")); } catch (e) {}
+  const saveL = () => { try { localStorage.setItem(LKEY, JSON.stringify(L)); } catch (e) {} };
 
-  const tableList = () => [...Array.from({length: S.tableCount}, (_, i) => "Masa " + (i + 1)), ...S.custom];
-  const cur = () => S.current ? (S.tables[S.current] ||= {lines: [], note: "", opened: Date.now()}) : null;
-  const total = t => t ? t.lines.reduce((a, l) => a + l.qty * l.price, 0) : 0;
-  const count = t => t ? t.lines.reduce((a, l) => a + l.qty, 0) : 0;
+  // ---------- Ortak veri (db) ya da yerel yedek
+  // TABLES: { slug: {name, note, opened, lines: {uid: line|null}} }
+  let TABLES = {}, HISTORY = [], TIP = {}, db = null, canEdit = true, readOnly = false;
+  const SKEY = "lou-adisyon-shared-local";
+  function loadLocalShared() {
+    try { const s = JSON.parse(localStorage.getItem(SKEY) || "{}"); TABLES = s.tables || {}; HISTORY = s.history || []; TIP = s.tip || {}; } catch (e) {}
+  }
+  const saveLocalShared = () => { try { localStorage.setItem(SKEY, JSON.stringify({tables: TABLES, history: HISTORY, tip: TIP})); } catch (e) {} };
 
-  // --- Arama
+  function onWriteErr(e) {
+    if (e && (e.code === "invalid_argument" || e.code === "not_granted")) { readOnly = true; toast("Bu sayfada yazma yetkiniz yok (sadece görüntüleme)"); }
+    else if (e && e.code === "quota_exceeded") toast("Kayıt alanı doldu: Gün sonundan eski günleri sıfırlayın");
+    else toast("Kaydedilemedi, bağlantıyı kontrol edin");
+    console.warn(e);
+  }
+  // Tek dokümana sırayla yaz (aynı anda tek yazma kuralı)
+  const queues = {};
+  function enqueue(key, fn) {
+    queues[key] = (queues[key] || Promise.resolve()).then(fn).catch(onWriteErr);
+    return queues[key];
+  }
+
+  const Store = {
+    putTable(name) {
+      const k = slug(name);
+      if (TABLES[k]) return;
+      TABLES[k] = {name, note: "", opened: Date.now(), lines: {}};
+      this._full(k);
+    },
+    putLine(name, line) {
+      const k = slug(name);
+      if (!TABLES[k]) TABLES[k] = {name, note: "", opened: Date.now(), lines: {}};
+      TABLES[k].lines = {...TABLES[k].lines, [line.uid]: line};
+      if (!db) return saveLocalShared();
+      const known = TABLES[k]._remote;
+      enqueue("t:" + k, () => known ? db.doc("tables/" + k).update({lines: {[line.uid]: line}}) : db.doc("tables/" + k).set(clean(TABLES[k])));
+    },
+    delLine(name, id) {
+      const k = slug(name); if (!TABLES[k]) return;
+      TABLES[k].lines = {...TABLES[k].lines, [id]: null};
+      if (!db) return saveLocalShared();
+      enqueue("t:" + k, () => db.doc("tables/" + k).update({lines: {[id]: null}}));
+    },
+    markSent(name, ids, ts) {
+      const k = slug(name), t = TABLES[k]; if (!t) return;
+      const patch = {};
+      ids.forEach(id => { t.lines[id] = {...t.lines[id], sent: ts}; patch[id] = {sent: ts}; });
+      if (!db) return saveLocalShared();
+      enqueue("t:" + k, () => db.doc("tables/" + k).update({lines: patch}));
+    },
+    setNote(name, note) {
+      const k = slug(name); if (!TABLES[k]) TABLES[k] = {name, note: "", opened: Date.now(), lines: {}};
+      TABLES[k].note = note;
+      if (!db) return saveLocalShared();
+      clearTimeout(this._nt); this._nt = setTimeout(() => {
+        const known = TABLES[k] && TABLES[k]._remote;
+        enqueue("t:" + k, () => known ? db.doc("tables/" + k).update({note}) : db.doc("tables/" + k).set(clean(TABLES[k])));
+      }, 600);
+    },
+    closeTable(name, bill) {
+      const k = slug(name);
+      delete TABLES[k];
+      if (!db) { HISTORY.unshift(bill); return saveLocalShared(); }
+      HISTORY.unshift(bill);
+      enqueue("h:" + bill.id, () => db.doc("history/" + bill.id).set(bill));
+      enqueue("t:" + k, () => db.doc("tables/" + k).delete());
+    },
+    dropEmpty(name) {
+      const k = slug(name), t = TABLES[k];
+      if (!t || activeLines(t).length || t.note) return;
+      delete TABLES[k];
+      if (!db) return saveLocalShared();
+      if (t._remote) enqueue("t:" + k, () => db.doc("tables/" + k).delete());
+    },
+    async resetDay() {
+      const today = HISTORY.filter(h => h.day === dayKey());
+      HISTORY = HISTORY.filter(h => h.day !== dayKey());
+      if (!db) return saveLocalShared();
+      for (const h of today) await db.doc("history/" + h.id).delete().catch(onWriteErr);
+    },
+    async setTip(tip) {
+      TIP = tip;
+      if (!db) return saveLocalShared();
+      await db.doc("settings/tip").set(tip);
+    },
+    _full(k) {
+      if (!db) return saveLocalShared();
+      enqueue("t:" + k, () => db.doc("tables/" + k).set(clean(TABLES[k])));
+    }
+  };
+  const clean = t => ({name: t.name, note: t.note || "", opened: t.opened, lines: t.lines || {}});
+  const activeLines = t => Object.values(t?.lines || {}).filter(Boolean).sort((a, b) => a.at - b.at);
+  const tableOf = name => name ? TABLES[slug(name)] : null;
+  const total = t => activeLines(t).reduce((a, l) => a + l.qty * l.price, 0);
+  const count = t => activeLines(t).reduce((a, l) => a + l.qty, 0);
+
+  function setLive(state) {
+    $("#liveDot").classList.toggle("live", state === "live");
+    $("#liveTxt").textContent = state === "live" ? "Ortak · canlı" : state === "local" ? "Bu cihaz (çevrimdışı)" : state === "stale" ? "Bağlantı bekleniyor…" : "Bağlanıyor…";
+    $("#modeHint").textContent = state === "local" ? "Veriler yalnızca bu cihazda saklanır." : "Masalar tüm garsonlarla anlık paylaşılır.";
+  }
+
+  async function connect() {
+    setLive("connecting");
+    if (!window.claude || typeof window.claude.use !== "function") { goLocal(); return; }
+    db = await window.claude.use("db").catch(() => null);
+    if (!db) { goLocal(); return; }
+    try {
+      const user = await window.claude.use("user");
+      if (user) { canEdit = !!(await user.canEdit()); const w = await user.can("data.write"); if (w === false) readOnly = true; }
+    } catch (e) {}
+    const timer = setTimeout(() => setLive("stale"), 10000);
+    db.collection("tables").onSnapshot(snap => {
+      const next = {};
+      snap.docs.forEach(d => { const v = d.data(); next[d.id] = {...v, lines: {...(v.lines || {})}, _remote: true}; });
+      // henüz yazılmamış yerel masaları koru
+      for (const [k, t] of Object.entries(TABLES)) if (!t._remote && !next[k]) next[k] = t;
+      TABLES = next;
+      if (!snap.metadata.fromCache) { clearTimeout(timer); setLive("live"); }
+      renderPad(); if ($("#tablesSheet").classList.contains("show")) renderTables();
+    }, e => { clearTimeout(timer); setLive("stale"); console.warn(e); });
+    db.collection("history").where("day", "==", dayKey()).onSnapshot(snap => {
+      HISTORY = snap.docs.map(d => d.data()).sort((a, b) => b.at - a.at);
+      if ($("#moreSheet").classList.contains("show")) renderMore();
+    }, e => console.warn(e));
+    db.doc("settings/tip").onSnapshot(snap => {
+      TIP = snap.exists ? snap.data() : {};
+      if ($("#tipSheet").classList.contains("show") && $("#tipEdit").style.display === "none") renderTip();
+    }, e => console.warn(e));
+  }
+  function goLocal() { db = null; loadLocalShared(); setLive("local"); renderPad(); }
+
+  // ---------- Arama
   function parseInput(raw) {
     let s = raw.trim(), qty = 1, note = "";
     const slash = s.indexOf("/");
@@ -294,18 +459,13 @@ main{flex:1;padding:4px 16px 120px}
     else if ((m = s.match(/^(.+?)\s+(?:x|\*)?\s*(\d{1,2})$/i))) { qty = +m[2]; s = m[1]; }
     return {qty: Math.max(1, Math.min(99, qty)), term: s, note};
   }
-
   function search(term) {
-    const q = norm(term);
-    if (!q) return [];
-    const toks = q.split(" ");
-    const out = [];
+    const q = norm(term); if (!q) return [];
+    const toks = q.split(" "), out = [];
     for (const it of ITEMS) {
       let score = 0, ok = true;
       for (const t of toks) {
-        const idx = it.hay.indexOf(t);
-        if (idx < 0) {
-          // baş harf kısaltması (örn: "tsk" -> Tavuk Schnitzel... )
+        if (it.hay.indexOf(t) < 0) {
           if (toks.length === 1 && t.length >= 2 && it.words.map(w => w[0]).join("").startsWith(t)) { score += 4; continue; }
           ok = false; break;
         }
@@ -315,21 +475,17 @@ main{flex:1;padding:4px 16px 120px}
         else score += 1;
       }
       if (!ok) continue;
-      score += Math.min(6, (S.usage[it.id] || 0) * 0.5) - it.nName.length / 100;
+      score += Math.min(6, (L.usage[it.id] || 0) * 0.5) - it.nName.length / 100;
       out.push([score, it]);
     }
     return out.sort((a, b) => b[0] - a[0]).slice(0, 30).map(x => x[1]);
   }
-
   function highlight(name, term) {
     const toks = norm(term).split(" ").filter(Boolean);
     if (!toks.length) return esc(name);
-
-    // normalize keeps length when only letters change; map positions on a char-cleaned copy
-    const clean = name.replace(/[^\p{L}\p{N} ]/gu, " ");
-    const mark = new Array(clean.length).fill(false);
-    const low = clean.toLocaleLowerCase("tr").replace(/[çğıöşüâîûé]/g, c => TR[c]);
-    for (const t of toks) { let i = low.indexOf(t); if (i >= 0) for (let k = i; k < i + t.length; k++) mark[k] = true; }
+    const low = name.replace(/[^\p{L}\p{N} ]/gu, " ").toLocaleLowerCase("tr").replace(/[çğıöşüâîûé]/g, c => TR[c]);
+    const mark = new Array(name.length).fill(false);
+    for (const t of toks) { const i = low.indexOf(t); if (i >= 0) for (let k = i; k < i + t.length; k++) mark[k] = true; }
     let html = "", open = false;
     for (let i = 0; i < name.length; i++) {
       if (mark[i] && !open) { html += "<mark>"; open = true; }
@@ -341,13 +497,11 @@ main{flex:1;padding:4px 16px 120px}
 
   const qEl = $("#q"), resEl = $("#results");
   let results = [], active = 0, catFilter = null;
-
   function renderResults() {
     const raw = qEl.value;
     $("#clearQ").style.display = raw ? "block" : "none";
     const {qty, term, note} = parseInput(raw);
-    if (catFilter && !term) results = ITEMS.filter(i => i.cat === catFilter);
-    else results = search(term);
+    results = catFilter && !term ? ITEMS.filter(i => i.cat === catFilter) : search(term);
     if (!raw.trim() && !catFilter) { resEl.classList.remove("show"); return; }
     active = Math.min(active, Math.max(0, results.length - 1));
     const tag = (qty > 1 ? qty + " × " : "") + (note ? " · not: " + note : "");
@@ -356,27 +510,25 @@ main{flex:1;padding:4px 16px 120px}
         <span class="n"><div>${highlight(it.name, term)}</div><small>${esc(it.cat)}${i === active && tag ? " — <b>" + esc(tag) + "</b>" : ""}</small></span>
         <span class="p">${TL(it.price)}</span><span class="plus">+${qty > 1 ? qty : ""}</span>
       </button>`).join("")
-      : `<div class="empty-res">“${esc(term)}” bulunamadı. Menü dışı ürün eklemek için: <b>${esc(term)} = 150</b> yazıp Enter'a bas.</div>`;
+      : `<div class="empty-res">“${esc(term)}” bulunamadı. Menü dışı ürün için: <b>${esc(term)} = 150</b> yazıp Enter'a bas.</div>`;
     resEl.classList.add("show");
     resEl.querySelector(".active")?.scrollIntoView({block: "nearest"});
   }
 
   function addItem(it, qty, note) {
-    if (!S.current) { openTables(); toast("Önce bir masa seç"); return; }
-    const t = cur();
+    if (!L.current) { openTables(); toast("Önce bir masa seç"); return; }
+    if (readOnly) { toast("Yazma yetkiniz yok"); return; }
     note = (note || "").trim();
-    const ex = t.lines.find(l => l.id === it.id && !l.sent && (l.note || "") === note && l.price === it.price);
-    if (ex) ex.qty += qty;
-    else t.lines.push({uid: Date.now() + Math.random(), id: it.id, name: it.name, price: it.price, qty, note, sent: false, at: Date.now()});
-    S.usage[it.id] = (S.usage[it.id] || 0) + qty;
-    save(); renderPad();
+    const t = tableOf(L.current);
+    const ex = activeLines(t).find(l => l.id === it.id && !l.sent && (l.note || "") === note && l.price === it.price);
+    if (ex) Store.putLine(L.current, {...ex, qty: ex.qty + qty});
+    else Store.putLine(L.current, {uid: uid(), id: it.id, name: it.name, price: it.price, qty, note, sent: 0, at: Date.now(), by: L.waiter || ""});
+    if (typeof it.id === "number") { L.usage[it.id] = (L.usage[it.id] || 0) + qty; saveL(); }
+    renderPad();
     toast(`${qty} × ${it.name} eklendi`);
   }
-
   function submitInput() {
-    const raw = qEl.value.trim();
-    if (!raw) return;
-    // Menü dışı ürün: "ad = fiyat"
+    const raw = qEl.value.trim(); if (!raw) return;
     const custom = raw.match(/^(?:(\d{1,2})\s+)?(.+?)\s*=\s*(\d+(?:[.,]\d+)?)\s*(?:\/(.*))?$/);
     if (custom) {
       addItem({id: "c:" + norm(custom[2]), name: custom[2].trim(), price: parseFloat(custom[3].replace(",", "."))}, +(custom[1] || 1), custom[4]);
@@ -395,18 +547,18 @@ main{flex:1;padding:4px 16px 120px}
     else if (e.key === "Enter") { submitInput(); e.preventDefault(); }
     else if (e.key === "Escape") { resetSearch(); qEl.blur(); }
   });
-  resEl.addEventListener("pointerdown", e => e.preventDefault()); // odak kaybını engelle
+  resEl.addEventListener("pointerdown", e => e.preventDefault());
   resEl.addEventListener("click", e => {
     const b = e.target.closest(".res"); if (!b) return;
-    const {qty, note} = parseInput(qEl.value);
+    const {qty, note, term} = parseInput(qEl.value);
     addItem(ITEMS[+b.dataset.id], qty, note);
-    if (catFilter && !parseInput(qEl.value).term) { qEl.value = ""; renderResults(); } else resetSearch();
+    if (catFilter && !term) { qEl.value = ""; renderResults(); } else resetSearch();
   });
   $("#clearQ").onclick = resetSearch;
-  document.addEventListener("click", e => { if (!e.target.closest(".search-wrap") && !e.target.closest(".cats")) { resEl.classList.remove("show"); } });
+  document.addEventListener("click", e => { if (!e.target.closest(".search-wrap") && !e.target.closest(".cats")) resEl.classList.remove("show"); });
 
   function renderCats() {
-    $("#cats").innerHTML = CATS.map(c => `<button class="cat" data-c="${esc(c)}" style="${c === catFilter ? "background:var(--accent);color:var(--accent-ink)" : ""}">${esc(c)}</button>`).join("");
+    $("#cats").innerHTML = CATS.map(c => `<button class="cat${c === catFilter ? " on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
   }
   $("#cats").addEventListener("click", e => {
     const b = e.target.closest(".cat"); if (!b) return;
@@ -414,57 +566,66 @@ main{flex:1;padding:4px 16px 120px}
     qEl.value = ""; active = 0; renderCats(); renderResults();
   });
 
-  // --- Not defteri (adisyon)
+  // ---------- Not defteri
   function renderPad() {
-    const t = cur(), pad = $("#pad");
-    $("#tableName").textContent = S.current || "Masa seç";
-    if (!t) {
+    const t = tableOf(L.current), pad = $("#pad");
+    $("#tableName").textContent = L.current ? L.current.replace(/^Masa /, "Masa ") : "Masa seç";
+    const lines = activeLines(t);
+    if (!L.current) {
       pad.innerHTML = `<div class="pad-empty"><div class="big">Masa seçilmedi</div>Sağ üstten bir masa seç, sonra ürün yazmaya başla.<div style="margin-top:14px"><button class="btn primary" id="pickT">🍽 Masa seç</button></div></div>`;
       $("#pickT").onclick = openTables;
     } else {
-      const opened = new Date(t.opened).toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"});
-      const lines = t.lines.map(l => `
-        <li class="ln${l.sent ? "" : " new"}" data-uid="${l.uid}">
-          <span class="q">${l.qty}</span>
-          <button class="body" data-edit>
-            <div class="nm">${esc(l.name)}</div>
-            ${l.note ? `<div class="note">↳ ${esc(l.note)}</div>` : ""}
-            <div class="st${l.sent ? " sent" : ""}">${l.sent ? "✓ mutfağa gitti " + new Date(l.sent).toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"}) : "● yeni"} · ${l.price ? TL(l.price) : "ikram"}</div>
-          </button>
-          <span class="amt">${TL(l.qty * l.price)}</span>
-          <span class="stepper"><button data-dec aria-label="Azalt">−</button><button data-inc aria-label="Arttır">+</button></span>
-        </li>`).join("");
-      pad.innerHTML = `
-        <div class="pad-head"><div class="pad-title">${esc(S.current)}</div>
-          <div class="pad-meta">Açılış ${opened}${S.waiter ? "<br>" + esc(S.waiter) : ""}</div></div>
-        ${t.lines.length ? `<ul class="lines">${lines}</ul>` : `<div class="pad-empty"><div class="big">Adisyon boş</div>Yukarıya ürün adını yaz. <br><b>2 menemen</b> → 2 adet ekler · <b>sezar / sossuz</b> → notlu ekler · <b>Doğum günü pastası = 500</b> → menü dışı ürün</div>`}
-        <div class="pad-foot">
-          <input class="table-note" id="tNote" placeholder="✎ Masa notu (kişi sayısı, alerji…)" value="${esc(t.note || "")}">
-          <div class="row total"><span>Toplam · ${count(t)} ürün</span><span>${TL(total(t))}</span></div>
-        </div>`;
-      $("#tNote").oninput = e => { t.note = e.target.value; save(); };
+      const noteFocused = document.activeElement && document.activeElement.id === "tNote";
+      if (noteFocused) { // yazarken notu ezme; sadece listeyi güncelle
+        const ul = pad.querySelector(".lines-wrap"); if (ul) ul.innerHTML = linesHTML(lines);
+        const tt = pad.querySelector(".pad-total"); if (tt) tt.innerHTML = `<span>Toplam · ${count(t)} ürün</span><span>${TL(total(t))}</span>`;
+      } else {
+        pad.innerHTML = `
+          <div class="pad-head"><div class="pad-title">${esc(L.current)}</div>
+            <div class="pad-meta">${t ? "Açılış " + hm(t.opened) : "Yeni masa"}${L.waiter ? "<br>" + esc(L.waiter) : ""}</div></div>
+          <div class="lines-wrap">${linesHTML(lines)}</div>
+          <div class="pad-foot">
+            <input class="table-note" id="tNote" placeholder="✎ Masa notu (kişi sayısı, alerji…)" value="${esc(t?.note || "")}">
+            <div class="row total pad-total"><span>Toplam · ${count(t)} ürün</span><span>${TL(total(t))}</span></div>
+          </div>`;
+        $("#tNote").oninput = e => { if (!readOnly) Store.setNote(L.current, e.target.value); };
+      }
     }
-    const unsent = t ? t.lines.filter(l => !l.sent).reduce((a, l) => a + l.qty, 0) : 0;
+    const unsent = lines.filter(l => !l.sent).reduce((a, l) => a + l.qty, 0);
     $("#barTotal").textContent = TL(total(t));
-    $("#barInfo").textContent = t ? `${S.current} · ${count(t)} ürün` : "Toplam";
-    $("#sendBtn").textContent = unsent ? `🔔 Mutfağa (${unsent})` : "🔔 Mutfağa";
+    $("#barInfo").textContent = L.current ? `${L.current} · ${count(t)} ürün` : "Toplam";
+    $("#sendBtn").textContent = unsent ? `🔔 Mutfak (${unsent})` : "🔔 Mutfak";
     $("#sendBtn").disabled = !unsent;
-    $("#payBtn").disabled = !t || !t.lines.length;
+    $("#payBtn").disabled = !lines.length;
+  }
+  function linesHTML(lines) {
+    if (!lines.length) return `<div class="pad-empty"><div class="big">Adisyon boş</div>Yukarıya ürün adını yaz. <br><b>2 menemen</b> → 2 adet · <b>sezar / sossuz</b> → notlu · <b>Pasta = 500</b> → menü dışı ürün</div>`;
+    return `<ul class="lines">${lines.map(l => `
+      <li class="ln${l.sent ? "" : " new"}" data-uid="${esc(l.uid)}">
+        <span class="q">${l.qty}</span>
+        <button class="body" data-edit>
+          <div class="nm">${esc(l.name)}</div>
+          ${l.note ? `<div class="note">↳ ${esc(l.note)}</div>` : ""}
+          <div class="st${l.sent ? " sent" : ""}">${l.sent ? "✓ mutfağa gitti " + hm(l.sent) : "● yeni"} · ${l.price ? TL(l.price) : "ikram"}${l.by ? " · " + esc(l.by) : ""}</div>
+        </button>
+        <span class="amt">${TL(l.qty * l.price)}</span>
+        <span class="stepper"><button data-dec aria-label="Azalt">−</button><button data-inc aria-label="Arttır">+</button></span>
+      </li>`).join("")}</ul>`;
   }
 
   $("#pad").addEventListener("click", e => {
     const li = e.target.closest(".ln"); if (!li) return;
-    const t = cur(), l = t.lines.find(x => String(x.uid) === li.dataset.uid); if (!l) return;
-    if (e.target.closest("[data-inc]")) { l.qty++; save(); renderPad(); }
+    const t = tableOf(L.current), l = t && t.lines[li.dataset.uid]; if (!l) return;
+    if (readOnly && !e.target.closest("[data-edit]")) { toast("Yazma yetkiniz yok"); return; }
+    if (e.target.closest("[data-inc]")) { Store.putLine(L.current, {...l, qty: l.qty + 1}); renderPad(); }
     else if (e.target.closest("[data-dec]")) {
-      if (l.qty > 1) l.qty--;
-      else if (l.sent && !confirm(`"${l.name}" mutfağa gitti. Yine de silinsin mi?`)) return;
-      else t.lines.splice(t.lines.indexOf(l), 1);
-      save(); renderPad();
+      if (l.qty > 1) Store.putLine(L.current, {...l, qty: l.qty - 1});
+      else { if (l.sent && !confirm(`"${l.name}" mutfağa gitti. Yine de silinsin mi?`)) return; Store.delLine(L.current, l.uid); }
+      renderPad();
     } else if (e.target.closest("[data-edit]")) openLine(l);
   });
 
-  // --- Satır düzenleme
+  // ---------- Satır düzenleme
   let editing = null, eQty = 1;
   const QUICK = ["az pişmiş", "orta", "iyi pişmiş", "acısız", "soğansız", "sossuz", "sos ayrı", "glutensiz", "buzsuz", "şekersiz", "laktozsuz süt", "önce gelsin", "sonra gelsin", "ikram"];
   function openLine(l) {
@@ -482,55 +643,54 @@ main{flex:1;padding:4px 16px 120px}
     const n = $("#lsNote"); n.value = n.value ? n.value + ", " + b.textContent : b.textContent;
   };
   $("#lsSave").onclick = () => {
-    const changedNote = ($("#lsNote").value.trim()) !== (editing.note || "");
-    editing.qty = eQty; editing.note = $("#lsNote").value.trim();
-    const p = parseFloat($("#lsPrice").value); if (!isNaN(p) && p >= 0) editing.price = p;
-    if (changedNote && editing.sent) editing.sent = false; // değişiklik mutfağa tekrar gitsin
-    save(); renderPad(); hide("#lineSheet");
+    if (readOnly) { toast("Yazma yetkiniz yok"); return; }
+    const note = $("#lsNote").value.trim(), p = parseFloat($("#lsPrice").value);
+    const next = {...editing, qty: eQty, note, price: !isNaN(p) && p >= 0 ? p : editing.price};
+    if (note !== (editing.note || "") && editing.sent) next.sent = 0; // değişiklik mutfağa tekrar gitsin
+    Store.putLine(L.current, next); renderPad(); hide("#lineSheet");
   };
   $("#lsDelete").onclick = () => {
-    const t = cur(); t.lines.splice(t.lines.indexOf(editing), 1); save(); renderPad(); hide("#lineSheet"); toast("Silindi");
+    if (readOnly) { toast("Yazma yetkiniz yok"); return; }
+    Store.delLine(L.current, editing.uid); renderPad(); hide("#lineSheet"); toast("Silindi");
   };
 
-  // --- Masalar
-  function openTables() {
-    $("#tableGrid").innerHTML = tableList().map(n => {
-      const t = S.tables[n], open = t && t.lines.length;
-      return `<button class="tbl${open ? " open" : ""}${n === S.current ? " cur" : ""}" data-t="${esc(n)}"><b>${esc(n.replace(/^Masa /, ""))}</b><small>${open ? TL(total(t)) : "boş"}</small></button>`;
-    }).join("");
-    show("#tablesSheet");
+  // ---------- Masalar
+  function tblBtn(name) {
+    const t = TABLES[slug(name)], open = t && activeLines(t).length;
+    return `<button class="tbl${open ? " open" : ""}${name === L.current ? " cur" : ""}" data-t="${esc(name)}"><b>${esc(name.replace(/^Masa /, ""))}</b><small>${open ? TL(total(t)) : "boş"}</small></button>`;
   }
+  function renderTables() {
+    const others = Object.values(TABLES).map(t => t.name).filter(n => n && !FIXED.includes(n));
+    if (L.current && !FIXED.includes(L.current) && !others.includes(L.current)) others.push(L.current);
+    $("#tableGroups").innerHTML = GROUPS.map(g => `<div class="grp"><div class="grp-t">${g.title}</div><div class="grid">${g.tables.map(n => tblBtn("Masa " + n)).join("")}</div></div>`).join("")
+      + (others.length ? `<div class="grp"><div class="grp-t">Diğer</div><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr))">${others.map(tblBtn).join("")}</div></div>` : "");
+  }
+  function openTables() { renderTables(); show("#tablesSheet"); }
   $("#tableBtn").onclick = openTables;
-  $("#tableGrid").onclick = e => {
-    const b = e.target.closest(".tbl"); if (!b) return;
-    selectTable(b.dataset.t);
-  };
+  $("#tableGroups").onclick = e => { const b = e.target.closest(".tbl"); if (b) selectTable(b.dataset.t); };
   function selectTable(n) {
-    // önceki boş masayı temizle
-    if (S.current && S.tables[S.current] && !S.tables[S.current].lines.length && !S.tables[S.current].note) delete S.tables[S.current];
-    S.current = n; cur(); save(); renderPad(); hide("#tablesSheet"); qEl.focus();
+    if (L.current && L.current !== n) Store.dropEmpty(L.current);
+    L.current = n; saveL(); renderPad(); hide("#tablesSheet"); qEl.focus();
   }
   $("#addTable").onclick = () => {
     const n = $("#newTable").value.trim(); if (!n) return;
-    if (!tableList().includes(n)) S.custom.push(n);
     $("#newTable").value = ""; selectTable(n);
   };
 
-  // --- Mutfağa gönder
+  // ---------- Mutfağa gönder
   $("#sendBtn").onclick = () => {
-    const t = cur(); if (!t) return;
-    const now = Date.now(), list = t.lines.filter(l => !l.sent);
-    if (!list.length) return;
-    list.forEach(l => l.sent = now);
-    save(); renderPad();
-    printTicket("kitchen", list);
+    if (readOnly) { toast("Yazma yetkiniz yok"); return; }
+    const t = tableOf(L.current); if (!t) return;
+    const list = activeLines(t).filter(l => !l.sent); if (!list.length) return;
+    Store.markSent(L.current, list.map(l => l.uid), Date.now());
+    renderPad(); kitchenTicket(list);
     toast(`${list.length} kalem mutfağa gönderildi`);
   };
 
-  // --- Hesap
+  // ---------- Hesap
   let disc = 0, split = 1, method = "Nakit";
   function payCalc() {
-    const sub = total(cur()), tot = Math.round(sub * (100 - disc)) / 100;
+    const sub = total(tableOf(L.current)), tot = Math.round(sub * (100 - disc)) / 100;
     $("#paySub").textContent = TL(sub);
     $("#payTotal").textContent = TL(tot) + (disc ? ` (−%${disc})` : "");
     $("#perPerson").textContent = TL(Math.ceil(tot / split * 100) / 100);
@@ -541,7 +701,7 @@ main{flex:1;padding:4px 16px 120px}
   }
   $("#payBtn").onclick = () => {
     disc = 0; split = 1; method = "Nakit"; $("#cashIn").value = "";
-    $("#payTable").textContent = S.current;
+    $("#payTable").textContent = L.current;
     $("#splitSeg").innerHTML = [1, 2, 3, 4, 5, 6, 8].map(n => `<button data-s="${n}" class="${n === 1 ? "on" : ""}">${n}</button>`).join("");
     [...$("#discSeg").children].forEach(b => b.classList.toggle("on", b.dataset.d === "0"));
     [...$("#methodSeg").children].forEach(b => b.classList.toggle("on", b.dataset.m === "Nakit"));
@@ -555,74 +715,123 @@ main{flex:1;padding:4px 16px 120px}
   segPick("#splitSeg", "s", v => split = +v);
   segPick("#methodSeg", "m", v => method = v);
   $("#cashIn").oninput = payCalc;
-  $("#printBtn").onclick = () => { printTicket("bill", cur().lines, payCalc()); };
+  $("#printBtn").onclick = () => billTicket(activeLines(tableOf(L.current)), payCalc());
+  $("#payTipBtn").onclick = () => { hide("#paySheet"); openTip(); };
   $("#closeBtn").onclick = () => {
-    const t = cur(), {sub, tot} = payCalc();
-    if (t.lines.some(l => !l.sent) && !confirm("Mutfağa gönderilmemiş ürünler var. Yine de hesabı kapat?")) return;
-    S.history.unshift({table: S.current, lines: t.lines, sub, total: tot, disc, method, at: Date.now(), opened: t.opened});
-    delete S.tables[S.current]; S.current = null; save();
+    if (readOnly) { toast("Yazma yetkiniz yok"); return; }
+    const t = tableOf(L.current), lines = activeLines(t), {sub, tot} = payCalc();
+    if (lines.some(l => !l.sent) && !confirm("Mutfağa gönderilmemiş ürünler var. Yine de hesabı kapat?")) return;
+    const id = "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    Store.closeTable(L.current, {id, table: L.current, lines: lines.map(({uid, name, price, qty, note}) => ({uid, name, price, qty, note})), sub, total: tot, disc, method, at: Date.now(), day: dayKey(), opened: t.opened, waiter: L.waiter || ""});
+    L.current = null; saveL();
     hide("#paySheet"); renderPad(); toast("Hesap kapatıldı ✓ " + TL(tot)); openTables();
   };
 
-  // --- Yazdırma (adisyon / mutfak fişi)
-  function printTicket(kind, lines, calc) {
-    const t = cur(), d = new Date();
-    const rows = lines.map(l => `<tr><td>${l.qty} x ${esc(l.name)}${l.note ? `<br>&nbsp;&nbsp;* ${esc(l.note)}` : ""}</td>${kind === "bill" ? `<td class="r">${TL(l.qty * l.price)}</td>` : ""}</tr>`).join("");
-    $("#print").innerHTML = kind === "kitchen" ? `
-      <h1>MUTFAK</h1><div class="c"><b>${esc(S.current)}</b> · ${d.toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"})}${S.waiter ? " · " + esc(S.waiter) : ""}</div><hr>
-      <table style="font-size:14px">${rows}</table>${t.note ? `<hr>Not: ${esc(t.note)}` : ""}` : `
+  // ---------- Yazdırma
+  function kitchenTicket(lines) {
+    const t = tableOf(L.current);
+    $("#print").innerHTML = `<h1>MUTFAK</h1><div class="c"><b>${esc(L.current)}</b> · ${hm(Date.now())}${L.waiter ? " · " + esc(L.waiter) : ""}</div><hr>
+      <table style="font-size:14px">${lines.map(l => `<tr><td>${l.qty} x ${esc(l.name)}${l.note ? `<br>&nbsp;&nbsp;* ${esc(l.note)}` : ""}</td></tr>`).join("")}</table>${t?.note ? `<hr>Not: ${esc(t.note)}` : ""}`;
+  }
+  function billTicket(lines, calc) {
+    $("#print").innerHTML = `
       <h1>LOU Cafe Bistro</h1><div class="c">ADİSYON</div><hr>
-      <div>${esc(S.current)}${S.waiter ? " · Garson: " + esc(S.waiter) : ""}<br>${d.toLocaleString("tr-TR")}</div><hr>
-      <table>${rows}</table><hr>
+      <div>${esc(L.current)}${L.waiter ? " · Garson: " + esc(L.waiter) : ""}<br>${new Date().toLocaleString("tr-TR")}</div><hr>
+      <table>${lines.map(l => `<tr><td>${l.qty} x ${esc(l.name)}${l.note ? `<br>&nbsp;&nbsp;* ${esc(l.note)}` : ""}</td><td class="r">${TL(l.qty * l.price)}</td></tr>`).join("")}</table><hr>
       <table><tr><td>Ara toplam</td><td class="r">${TL(calc.sub)}</td></tr>
       ${disc ? `<tr><td>İndirim %${disc}</td><td class="r">−${TL(calc.sub - calc.tot)}</td></tr>` : ""}
       <tr><td><b>TOPLAM</b></td><td class="r"><b>${TL(calc.tot)}</b></td></tr>
       ${split > 1 ? `<tr><td>Kişi başı (${split})</td><td class="r">${TL(Math.ceil(calc.tot / split * 100) / 100)}</td></tr>` : ""}</table>
       <hr><div class="c">Fiyatlara tüm vergiler dahildir.<br>Bu belge mali değeri olmayan bilgi fişidir.<br>Afiyet olsun!</div>`;
-    if (kind === "bill" || S.printKitchen) window.print();
+    window.print();
   }
 
-  // --- Gün sonu
-  function openMore() {
-    const today = new Date().toDateString(), h = S.history.filter(x => new Date(x.at).toDateString() === today);
+  // ---------- TIP
+  const ibanClean = s => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const ibanFmt = s => ibanClean(s).replace(/(.{4})/g, "$1 ").trim();
+  function ibanValid(s) {
+    const v = ibanClean(s);
+    if (!/^TR\d{24}$/.test(v)) return false;
+    const r = (v.slice(4) + v.slice(0, 4)).replace(/[A-Z]/g, c => c.charCodeAt(0) - 55);
+    let m = 0; for (const ch of r) m = (m * 10 + +ch) % 97;
+    return m === 1;
+  }
+  function renderTip() {
+    const v = $("#tipView"), iban = ibanClean(TIP.iban);
+    $("#tipEditBtn").style.display = canEdit && !readOnly ? "" : "none";
+    $("#tipCopy").style.display = iban ? "" : "none";
+    if (!iban) {
+      v.innerHTML = `<div class="tip-title">TIP</div><p class="tip-empty">Henüz bahşiş IBAN'ı girilmedi.${canEdit ? " Aşağıdan <b>IBAN ayarla</b>'ya dokunun." : " Lütfen yöneticiye bildirin."}</p>`;
+      return;
+    }
+    v.innerHTML = `
+      <div class="tip-title">Teşekkürler!</div>
+      <p class="tip-sub">${esc(TIP.msg || "Hizmetimizden memnun kaldıysanız QR'ı okutarak bahşiş gönderebilirsiniz.")}</p>
+      <div class="qr-card" id="qrBox"></div>
+      <div class="holder">${esc(TIP.name || "")}</div>
+      <div class="iban">${esc(ibanFmt(iban))}</div>
+      <p class="tip-sub" style="font-size:12px">Telefon kamerası veya banka uygulamasıyla okutun · IBAN kopyalanır</p>`;
+    const box = $("#qrBox");
+    if (window.QRCode) new QRCode(box, {text: iban, width: 512, height: 512, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M});
+    else box.innerHTML = `<div style="line-height:1.4;color:#333;padding:20px">QR yüklenemedi.<br>IBAN'ı aşağıdan kullanın.</div>`;
+  }
+  function openTip() { $("#tipEdit").style.display = "none"; $("#tipActions").style.display = ""; $("#tipView").style.display = ""; renderTip(); show("#tipSheet"); }
+  $("#tipBtn").onclick = openTip;
+  $("#tipEditBtn").onclick = () => {
+    $("#tipIban").value = ibanFmt(TIP.iban); $("#tipName").value = TIP.name || ""; $("#tipMsg").value = TIP.msg || ""; $("#tipErr").textContent = "";
+    $("#tipView").style.display = "none"; $("#tipActions").style.display = "none"; $("#tipEdit").style.display = "";
+  };
+  $("#tipCancel").onclick = openTip;
+  $("#tipSave").onclick = async () => {
+    const iban = ibanClean($("#tipIban").value);
+    if (!ibanValid(iban)) { $("#tipErr").textContent = "Geçersiz IBAN. TR ile başlayan 26 karakterlik IBAN girin."; return; }
+    try { await Store.setTip({iban, name: $("#tipName").value.trim(), msg: $("#tipMsg").value.trim(), updatedAt: Date.now()}); toast("IBAN kaydedildi"); openTip(); }
+    catch (e) { $("#tipErr").textContent = "Kaydedilemedi: IBAN'ı yalnızca sayfa sahibi/editörü değiştirebilir."; }
+  };
+  $("#tipCopy").onclick = async () => {
+    try { await navigator.clipboard.writeText(ibanClean(TIP.iban)); toast("IBAN kopyalandı"); } catch (e) { toast(ibanFmt(TIP.iban)); }
+  };
+
+  // ---------- Gün sonu
+  function renderMore() {
+    const h = HISTORY.filter(x => x.day === dayKey());
     const by = m => h.filter(x => x.method === m).reduce((a, x) => a + x.total, 0);
     $("#dayCount").textContent = h.length;
     $("#dayCash").textContent = TL(by("Nakit")); $("#dayCard").textContent = TL(by("Kart")); $("#dayMix").textContent = TL(by("Karışık"));
     $("#dayTotal").textContent = TL(h.reduce((a, x) => a + x.total, 0));
-    $("#histList").innerHTML = h.length ? h.map(x => `<li><span>${esc(x.table)}<br><small>${new Date(x.at).toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"})} · ${x.method}${x.disc ? " · %" + x.disc : ""} · ${x.lines.reduce((a, l) => a + l.qty, 0)} ürün</small></span><b>${TL(x.total)}</b></li>`).join("") : `<li><small>Bugün kapanan hesap yok.</small></li>`;
-    $("#waiter").value = S.waiter || "";
+    $("#histList").innerHTML = h.length ? h.map(x => `<li><span>${esc(x.table)}<br><small>${hm(x.at)} · ${esc(x.method)}${x.disc ? " · %" + x.disc : ""} · ${x.lines.reduce((a, l) => a + l.qty, 0)} ürün${x.waiter ? " · " + esc(x.waiter) : ""}</small></span><b>${TL(x.total)}</b></li>`).join("") : `<li><small>Bugün kapanan hesap yok.</small></li>`;
     $("#menuDate").textContent = window.MENU_DATE;
-    show("#moreSheet");
+    $("#resetDay").style.display = canEdit && !readOnly ? "" : "none";
   }
-  $("#moreBtn").onclick = openMore;
-  $("#waiter").oninput = e => { S.waiter = e.target.value; save(); renderPad(); };
-  $("#resetDay").onclick = () => { if (confirm("Kapanan hesap geçmişi silinsin mi? (Açık masalar kalır)")) { S.history = []; save(); openMore(); } };
+  $("#moreBtn").onclick = () => { $("#waiter").value = L.waiter || ""; renderMore(); show("#moreSheet"); };
+  $("#waiter").oninput = e => { L.waiter = e.target.value; saveL(); };
+  $("#resetDay").onclick = async () => { if (confirm("Bugünkü kapanan hesap geçmişi silinsin mi? (Açık masalar kalır)")) { await Store.resetDay(); renderMore(); } };
   $("#themeBtn").onclick = () => {
     const r = document.documentElement, dark = matchMedia("(prefers-color-scheme: dark)").matches;
-    const curT = r.dataset.theme || (dark ? "dark" : "light");
-    r.dataset.theme = curT === "dark" ? "light" : "dark";
-    try { localStorage.setItem(KEY + "-theme", r.dataset.theme); } catch (e) {}
+    r.dataset.theme = (r.dataset.theme || (dark ? "dark" : "light")) === "dark" ? "light" : "dark";
+    try { localStorage.setItem(LKEY + "-theme", r.dataset.theme); } catch (e) {}
   };
-  try { const th = localStorage.getItem(KEY + "-theme"); if (th) document.documentElement.dataset.theme = th; } catch (e) {}
+  try { const th = localStorage.getItem(LKEY + "-theme"); if (th) document.documentElement.dataset.theme = th; } catch (e) {}
 
-  // --- Tüm menü
+  // ---------- Tüm menü
   $("#browseBtn").onclick = () => {
     $("#browseList").innerHTML = CATS.map(c => `<ul class="menu-list"><h3>${esc(c)}</h3>${ITEMS.filter(i => i.cat === c).map(it => `<button class="res" data-id="${it.id}"><span class="n"><div>${esc(it.name)}</div>${it.en ? `<small>${esc(it.en)}</small>` : ""}</span><span class="p">${TL(it.price)}</span><span class="plus">+</span></button>`).join("")}</ul>`).join("");
     hide("#moreSheet"); show("#browseSheet");
   };
   $("#browseList").onclick = e => { const b = e.target.closest(".res"); if (b) addItem(ITEMS[+b.dataset.id], 1, ""); };
 
-  // --- Yardımcılar
+  // ---------- Yardımcılar
   function show(s) { $(s).classList.add("show"); }
   function hide(s) { $(s).classList.remove("show"); }
   document.querySelectorAll(".scrim").forEach(sc => sc.addEventListener("click", e => {
     if (e.target === sc || e.target.closest("[data-close]")) sc.classList.remove("show");
   }));
   let tt;
-  function toast(msg) { const el = $("#toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("show"), 1600); }
+  function toast(msg) { const el = $("#toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("show"), 1700); }
 
   renderCats(); renderPad();
-  if (!S.current) openTables();
+  if (!L.current) openTables();
+  connect();
 })();
 </script>
 </body>
