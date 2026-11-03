@@ -285,6 +285,12 @@ main{flex:1;padding:12px 16px 120px}
   <div id="browseList"></div>
 </div></div>
 
+<div class="scrim" id="askSheet" style="z-index:70"><div class="sheet">
+  <h2 id="askTitle">Emin misiniz?</h2>
+  <p id="askText" style="margin:0 0 6px;color:var(--muted)"></p>
+  <div class="actions" id="askBtns"></div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 <div id="print"></div>
 
@@ -403,11 +409,14 @@ main{flex:1;padding:12px 16px 120px}
       if (!db) return saveLocalShared();
       if (t._remote) enqueue("t:" + k, () => db.doc("tables/" + k).delete());
     },
-    async resetDay() {
+    async resetDay(all) {
       const today = HISTORY.filter(h => h.day === dayKey());
       HISTORY = HISTORY.filter(h => h.day !== dayKey());
+      const tables = all ? Object.keys(TABLES) : [];
+      if (all) TABLES = {};
       if (!db) return saveLocalShared();
       for (const h of today) await db.doc("history/" + h.id).delete().catch(onWriteErr);
+      for (const k of tables) await db.doc("tables/" + k).delete().catch(onWriteErr);
     },
     async setTip(tip) {
       TIP = tip;
@@ -636,14 +645,14 @@ main{flex:1;padding:12px 16px 120px}
       </li>`).join("")}</ul>`;
   }
 
-  $("#pad").addEventListener("click", e => {
+  $("#pad").addEventListener("click", async e => {
     const li = e.target.closest(".ln"); if (!li) return;
     const t = tableOf(L.current), l = t && t.lines[li.dataset.uid]; if (!l) return;
     if (readOnly && !e.target.closest("[data-edit]")) { toast("Yazma yetkiniz yok"); return; }
     if (e.target.closest("[data-inc]")) { Store.putLine(L.current, {...l, qty: l.qty + 1}); renderPad(); }
     else if (e.target.closest("[data-dec]")) {
       if (l.qty > 1) Store.putLine(L.current, {...l, qty: l.qty - 1});
-      else { if (l.sent && !confirm(`"${l.name}" mutfağa gitti. Yine de silinsin mi?`)) return; Store.delLine(L.current, l.uid); }
+      else { if (l.sent && !(await ask("Ürün silinsin mi?", `"${l.name}" mutfağa gitti.`, [["y", "Sil", "btn primary"]]))) return; Store.delLine(L.current, l.uid); }
       renderPad();
     } else if (e.target.closest("[data-edit]")) openLine(l);
   });
@@ -743,10 +752,10 @@ main{flex:1;padding:12px 16px 120px}
   $("#cashIn").oninput = payCalc;
   $("#printBtn").onclick = () => billTicket(activeLines(tableOf(L.current)), payCalc());
   $("#payTipBtn").onclick = () => { hide("#paySheet"); openTip(); };
-  $("#closeBtn").onclick = () => {
+  $("#closeBtn").onclick = async () => {
     if (readOnly) { toast("Yazma yetkiniz yok"); return; }
     const t = tableOf(L.current), lines = activeLines(t), {sub, tot} = payCalc();
-    if (lines.some(l => !l.sent) && !confirm("Mutfağa gönderilmemiş ürünler var. Yine de hesabı kapat?")) return;
+    if (lines.some(l => !l.sent) && !(await ask("Hesap kapatılsın mı?", "Mutfağa gönderilmemiş ürünler var.", [["y", "Yine de kapat"]]))) return;
     const id = "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     Store.closeTable(L.current, {id, table: L.current, lines: lines.map(({uid, name, price, qty, note}) => ({uid, name, price, qty, note})), sub, total: tot, disc, method, at: Date.now(), day: dayKey(), opened: t.opened});
     L.current = null; saveL();
@@ -828,10 +837,15 @@ main{flex:1;padding:12px 16px 120px}
     $("#dayTotal").textContent = TL(h.reduce((a, x) => a + x.total, 0));
     $("#histList").innerHTML = h.length ? h.map(x => `<li><span>${esc(x.table)}<br><small>${hm(x.at)} · ${esc(x.method)}${x.disc ? " · %" + x.disc : ""} · ${x.lines.reduce((a, l) => a + l.qty, 0)} ürün</small></span><b>${TL(x.total)}</b></li>`).join("") : `<li><small>Bugün kapanan hesap yok.</small></li>`;
     $("#menuDate").textContent = window.MENU_DATE;
-    $("#resetDay").style.display = canEdit && !readOnly ? "" : "none";
   }
   $("#moreBtn").onclick = () => { renderMore(); show("#moreSheet"); };
-  $("#resetDay").onclick = async () => { if (confirm("Bugünkü kapanan hesap geçmişi silinsin mi? (Açık masalar kalır)")) { await Store.resetDay(); renderMore(); } };
+  $("#resetDay").onclick = async () => {
+    const v = await ask("Günü sıfırla", "Test verilerini temizler. Bu işlem geri alınamaz.", [["h", "Sadece kapanan hesaplar", "btn"], ["all", "Her şey (açık masalar dahil)", "btn primary"]]);
+    if (!v) return;
+    await Store.resetDay(v === "all");
+    if (v === "all") { L.current = null; saveL(); renderPad(); }
+    renderMore(); toast(v === "all" ? "Tüm masalar ve hesaplar sıfırlandı" : "Kapanan hesaplar sıfırlandı");
+  };
 
   // ---------- Tüm menü
   function renderBrowse() {
@@ -845,6 +859,17 @@ main{flex:1;padding:12px 16px 120px}
   };
 
   // ---------- Yardımcılar
+  // Sayfa içi onay penceresi (gömülü sayfalarda confirm() engellenebiliyor)
+  function ask(title, text, buttons) {
+    return new Promise(res => {
+      $("#askTitle").textContent = title; $("#askText").textContent = text || "";
+      $("#askBtns").innerHTML = [["", "Vazgeç", "btn"], ...buttons].map(([v, label, cls]) => `<button class="${cls || "btn primary"}" data-v="${esc(v)}">${esc(label)}</button>`).join("");
+      const sc = $("#askSheet");
+      const done = v => { sc.classList.remove("show"); sc.onclick = null; res(v); };
+      sc.onclick = e => { if (e.target === sc) return done(""); const b = e.target.closest("[data-v]"); if (b) done(b.dataset.v); };
+      show("#askSheet");
+    });
+  }
   function show(s) { $(s).classList.add("show"); }
   function hide(s) { $(s).classList.remove("show"); }
   document.querySelectorAll(".scrim").forEach(sc => sc.addEventListener("click", e => {
