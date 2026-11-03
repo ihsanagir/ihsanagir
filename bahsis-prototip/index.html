@@ -1,0 +1,420 @@
+<title>Kartla Bahşiş</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: üç görünüm (Müşteri telefonu / Yönetici paneli / QR kartları), üstte sekmeler; müşteri ekranı telefon genişliğinde ortalanır */
+:root{
+  --bg:#eef1f0; --surface:#ffffff; --ink:#15211f; --muted:#5d6b68; --line:#d5dcda;
+  --accent:#0f6b5c; --accent-ink:#ffffff; --gold:#c98a12; --gold-soft:#fbf1dc;
+  --good:#1d7a3e; --warn:#a35b00;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-num:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1716; --surface:#172220; --ink:#e7eeec; --muted:#93a39f; --line:#2a3836;
+  --accent:#3fb39c; --accent-ink:#06201b; --gold:#e8b04a; --gold-soft:#2c2414;
+  --good:#5cc684; --warn:#e0a050; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1716; --surface:#172220; --ink:#e7eeec; --muted:#93a39f; --line:#2a3836;
+  --accent:#3fb39c; --accent-ink:#06201b; --gold:#e8b04a; --gold-soft:#2c2414;
+  --good:#5cc684; --warn:#e0a050; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:20px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:1.6rem;font-weight:700}
+h2{font-size:1.2rem;font-weight:700}
+h3{font-size:1rem;font-weight:500}
+p{margin:0}
+.muted{color:var(--muted)}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+header.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;flex-wrap:wrap}
+.tabs a{padding:7px 14px;border-radius:999px;color:var(--muted);text-decoration:none;font-weight:600;font-size:.9rem}
+.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+.tabs a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.mode{font-size:.8rem;padding:4px 10px;border-radius:999px;background:var(--gold-soft);color:var(--ink);border:1px solid var(--line)}
+.demo-note{font-size:.85rem;color:var(--muted);border-left:3px solid var(--gold);padding:4px 0 4px 12px;max-width:70ch}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:12px 16px;font-weight:600}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.small{padding:6px 10px;font-size:.85rem}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+label{display:grid;gap:6px;font-size:.88rem;font-weight:600}
+
+/* Müşteri telefonu */
+.phone{max-width:400px;width:100%;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:28px;overflow:hidden;box-shadow:0 18px 40px -24px rgba(0,0,0,.35)}
+.phone-head{background:var(--accent);color:var(--accent-ink);padding:22px 22px 20px;display:grid;gap:4px}
+.phone-head .venue{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;opacity:.85}
+.phone-head h2{font-size:1.45rem}
+.phone-body{padding:20px 22px 24px;display:grid;gap:18px}
+.picker{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 12px;font-weight:600;font-size:.9rem}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.amt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:14px 4px;font-family:var(--f-num);font-size:1.05rem}
+.amt[aria-pressed="true"]{border-color:var(--gold);background:var(--gold-soft)}
+.stars{display:flex;gap:4px}
+.star{background:none;border:0;font-size:1.6rem;line-height:1;color:var(--line);padding:2px}
+.star[aria-pressed="true"]{color:var(--gold)}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--line);padding-top:14px}
+.total .num{font-size:1.5rem}
+.checkout{display:grid;gap:14px;text-align:center;justify-items:center}
+.lock{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--gold-soft);color:var(--gold);font-size:1.5rem;font-weight:700}
+.tap{width:120px;height:120px;border-radius:50%;border:2px dashed var(--accent);display:grid;place-items:center;color:var(--accent);font-weight:700;font-family:var(--f-display)}
+.done-mark{width:64px;height:64px;border-radius:50%;background:var(--good);color:#fff;display:grid;place-items:center;font-size:2rem}
+
+/* Panel */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:grid;gap:2px}
+.kpi .num{font-size:1.45rem}
+.grid2{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:14px;min-width:0;align-content:start}
+.row-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.bars{display:grid;gap:12px}
+.bar{display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:center}
+.bar .track{height:10px;background:var(--bg);border-radius:6px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:6px}
+.bar .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:var(--surface);color:var(--muted);border:0;padding:6px 12px;font-weight:600;font-size:.85rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right}
+.tag{font-size:.7rem;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px}
+.staff-list{display:grid;gap:8px}
+.staff-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.add-row{display:flex;gap:8px}
+.empty{color:var(--muted);font-size:.9rem;padding:8px 0}
+
+/* QR kartları */
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.qr-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:10px;justify-items:center;text-align:center}
+.qr-box{background:#fff;padding:10px;border-radius:8px;width:180px;height:180px;display:grid;place-items:center}
+.qr-box img,.qr-box canvas{width:160px!important;height:160px!important}
+.qr-card .who{font-family:var(--f-display);font-size:1.2rem;font-weight:700}
+.url-row{display:grid;gap:6px;max-width:640px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .4s ease}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div style="display:grid;gap:4px">
+      <span class="eyebrow">Prototip · Dijital bahşiş</span>
+      <h1>Kartla Bahşiş</h1>
+    </div>
+    <nav class="tabs" aria-label="Görünümler">
+      <a href="#musteri" data-view="musteri">Müşteri ekranı</a>
+      <a href="#panel" data-view="panel">Yönetici paneli</a>
+      <a href="#qr" data-view="qr">QR kartları</a>
+    </nav>
+  </header>
+  <p class="demo-note">Bu bir demo. Gerçek kart bilgisi alınmaz, para çekilmez. Canlı sistemde "Kartla öde" butonu müşteriyi ödeme kuruluşunun (iyzico, PayTR, Param vb.) güvenli ödeme sayfasına yönlendirir. <span id="mode" class="mode">Bağlanıyor…</span></p>
+
+  <!-- MÜŞTERİ -->
+  <section id="v-musteri" hidden>
+    <div class="phone">
+      <div class="phone-head">
+        <span class="venue">Restoran · Masa <span id="c-table-label">12</span></span>
+        <h2 id="c-title">Garsonunuza teşekkür edin</h2>
+        <p style="opacity:.9;font-size:.9rem">Bahşişin tamamı hizmet veren ekibe gider.</p>
+      </div>
+      <div class="phone-body" id="c-step-form">
+        <div style="display:grid;gap:8px">
+          <span class="eyebrow">Garsonunuz</span>
+          <div class="picker" id="c-staff"></div>
+        </div>
+        <div style="display:grid;gap:8px">
+          <span class="eyebrow">Bahşiş tutarı</span>
+          <div class="amounts" id="c-amounts"></div>
+          <label>Başka tutar (₺)
+            <input id="c-custom" type="number" inputmode="decimal" min="1" step="1" placeholder="Örn. 75">
+          </label>
+        </div>
+        <div style="display:grid;gap:6px">
+          <span class="eyebrow">Hizmeti puanlayın (isteğe bağlı)</span>
+          <div class="stars" id="c-stars"></div>
+        </div>
+        <label>Kısa not (isteğe bağlı)
+          <input id="c-note" type="text" maxlength="80" placeholder="Çok ilgiliydiniz, teşekkürler!">
+        </label>
+        <div class="total"><span class="muted">Bahşiş</span><span class="num" id="c-total">0 ₺</span></div>
+        <button class="btn" id="c-pay" disabled>Kartla öde</button>
+        <p class="muted" style="font-size:.8rem;text-align:center">Temassız kart, Apple Pay ve Google Pay desteklenir.</p>
+      </div>
+      <div class="phone-body checkout" id="c-step-checkout" hidden>
+        <div class="lock">🔒</div>
+        <h2>Güvenli ödeme sayfası</h2>
+        <p class="muted" style="max-width:32ch">Gerçek sistemde burada ödeme kuruluşunun sayfası açılır ve müşteri kartını girer ya da telefonunu yaklaştırır.</p>
+        <div class="tap">Temassız</div>
+        <p class="num" style="font-size:1.4rem" id="c-co-amount"></p>
+        <button class="btn" id="c-confirm" style="width:100%">Ödemeyi simüle et</button>
+        <button class="btn ghost" id="c-back" style="width:100%">Geri dön</button>
+      </div>
+      <div class="phone-body checkout" id="c-step-done" hidden>
+        <div class="done-mark">✓</div>
+        <h2>Teşekkürler!</h2>
+        <p class="muted" id="c-done-text"></p>
+        <button class="btn ghost" id="c-again" style="width:100%">Yeni bahşiş</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL -->
+  <section id="v-panel" hidden style="display:grid;gap:20px">
+    <div class="kpis">
+      <div class="kpi"><span class="eyebrow">Bugün toplanan</span><span class="num" id="k-today">0 ₺</span><span class="muted" id="k-today-n" style="font-size:.85rem"></span></div>
+      <div class="kpi"><span class="eyebrow">Tüm zamanlar</span><span class="num" id="k-all">0 ₺</span><span class="muted" id="k-all-n" style="font-size:.85rem"></span></div>
+      <div class="kpi"><span class="eyebrow">Ortalama bahşiş</span><span class="num" id="k-avg">0 ₺</span><span class="muted" style="font-size:.85rem">işlem başına</span></div>
+      <div class="kpi"><span class="eyebrow">Ortalama puan</span><span class="num" id="k-rate">–</span><span class="muted" style="font-size:.85rem">5 üzerinden</span></div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <div class="row-head">
+          <h2>Dağıtım</h2>
+          <div class="seg" role="group" aria-label="Dağıtım yöntemi">
+            <button data-split="kisi" aria-pressed="true">Kişi bazlı</button>
+            <button data-split="havuz" aria-pressed="false">Eşit havuz</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+          <label style="max-width:180px">Komisyon oranı (%)
+            <input id="p-fee" type="number" min="0" max="10" step="0.1" value="2.5">
+          </label>
+          <label style="max-width:180px">Dönem
+            <select id="p-range"><option value="today">Bugün</option><option value="all" selected>Tüm zamanlar</option></select>
+          </label>
+        </div>
+        <div class="bars" id="p-bars"></div>
+        <p class="muted" style="font-size:.82rem" id="p-split-note"></p>
+      </div>
+      <div class="panel">
+        <h2>Garsonlar</h2>
+        <div class="staff-list" id="p-staff"></div>
+        <form class="add-row" id="p-add">
+          <input id="p-new" type="text" maxlength="30" placeholder="Garson adı" aria-label="Yeni garson adı">
+          <button class="btn small" type="submit">Ekle</button>
+        </form>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="row-head"><h2>Son bahşişler</h2><span class="muted" style="font-size:.85rem" id="p-count"></span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Saat</th><th>Garson</th><th>Masa</th><th class="r">Tutar</th><th>Puan</th><th>Not</th></tr></thead>
+          <tbody id="p-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- QR -->
+  <section id="v-qr" hidden style="display:grid;gap:16px">
+    <div class="url-row">
+      <label>Bahşiş sayfasının linki
+        <input id="q-url" type="url" placeholder="https://...">
+      </label>
+      <p class="muted" style="font-size:.85rem">Her garsonun QR'ı bu linke kendi kodunu ekler. Müşteri okutunca doğrudan o garsonun bahşiş ekranı açılır. Kartları masaya, hesap kabına ya da garsonun yaka kartına koyabilirsiniz.</p>
+    </div>
+    <div class="qr-grid" id="q-grid"></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+  const PAGE_URL = "https://claude.ai/artifact/CGDjSbecFWkXGkCS65CUJj";
+  const AMOUNTS = [50,100,150,200,300,500];
+  const tl = n => new Intl.NumberFormat("tr-TR",{maximumFractionDigits:2}).format(n) + " ₺";
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const $ = id => document.getElementById(id);
+
+  let staff = [], tips = [], store = null;
+  let sel = {staffId:null, amount:0, rating:0}, split = "kisi";
+
+  // ---------- Depolama: paylaşımlı db, yoksa bu tarayıcıda yerel demo ----------
+  const local = {
+    read(k){ try{ return JSON.parse(localStorage.getItem("bahsis_"+k)||"[]"); }catch(e){ return []; } },
+    write(k,v){ try{ localStorage.setItem("bahsis_"+k, JSON.stringify(v)); }catch(e){} }
+  };
+  function useLocal(){
+    store = {
+      kind:"local",
+      addStaff(name){ staff.push({id:"g"+Date.now().toString(36), name, createdAt:Date.now()}); local.write("staff",staff); render(); return Promise.resolve(); },
+      removeStaff(id){ staff = staff.filter(s=>s.id!==id); local.write("staff",staff); render(); return Promise.resolve(); },
+      addTip(t){ tips.push({id:"t"+Date.now().toString(36), ...t}); local.write("tips",tips); render(); return Promise.resolve(); }
+    };
+    staff = local.read("staff"); tips = local.read("tips");
+    if(!staff.length){
+      staff = [{id:"ayse",name:"Ayşe",createdAt:1},{id:"mehmet",name:"Mehmet",createdAt:2},{id:"zeynep",name:"Zeynep",createdAt:3}];
+      const now = Date.now();
+      tips = [
+        {id:"e1",staffId:"ayse",amount:100,rating:5,note:"Harika servis",table:"4",createdAt:now-3600e3,example:true},
+        {id:"e2",staffId:"mehmet",amount:50,rating:4,note:"",table:"9",createdAt:now-5400e3,example:true},
+        {id:"e3",staffId:"zeynep",amount:200,rating:5,note:"Doğum günümüzü güzelleştirdiniz",table:"2",createdAt:now-7200e3,example:true}
+      ];
+    }
+    $("mode").textContent = "Yerel demo: veriler sadece bu tarayıcıda";
+    render();
+  }
+
+  async function init(){
+    route();
+    let db = null;
+    try{ db = window.claude && window.claude.use ? await window.claude.use("db") : null; }catch(e){ db = null; }
+    if(!db){ useLocal(); return; }
+    let gotData = false;
+    const timer = setTimeout(()=>{ if(!gotData) useLocal(); }, 10000);
+    store = {
+      kind:"db",
+      addStaff(name){ return db.collection("staff").add({name, createdAt:Date.now()}); },
+      removeStaff(id){ return db.doc("staff/"+id).delete(); },
+      addTip(t){ return db.collection("tips").add(t); }
+    };
+    db.collection("staff").onSnapshot(snap=>{
+      gotData = true; clearTimeout(timer);
+      staff = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+      $("mode").textContent = "Canlı: tüm cihazlarda paylaşılıyor";
+      render();
+    }, ()=>{ clearTimeout(timer); useLocal(); });
+    db.collection("tips").onSnapshot(snap=>{
+      gotData = true;
+      tips = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      render();
+    }, ()=>{});
+  }
+
+  // ---------- Yönlendirme ----------
+  function route(){
+    const h = (location.hash||"").slice(1);
+    let view = "musteri";
+    if(h==="panel"||h==="qr") view = h;
+    if(h.startsWith("g-")){ sel.staffId = h.slice(2); }
+    ["musteri","panel","qr"].forEach(v=>{
+      $("v-"+v).hidden = v!==view;
+      document.querySelector('[data-view="'+v+'"]').setAttribute("aria-current", v===view ? "page" : "false");
+    });
+    render();
+  }
+  window.addEventListener("hashchange", route);
+
+  function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2200); }
+  const staffName = id => (staff.find(s=>s.id===id)||{}).name || "Ekip";
+
+  // ---------- Müşteri ----------
+  function renderCustomer(){
+    if(sel.staffId && !staff.find(s=>s.id===sel.staffId) && staff.length) sel.staffId = null;
+    $("c-staff").innerHTML = staff.length
+      ? staff.map(s=>`<button class="chip" data-staff="${esc(s.id)}" aria-pressed="${s.id===sel.staffId}">${esc(s.name)}</button>`).join("")
+      : `<span class="empty">Henüz garson eklenmedi. Yönetici panelinden ekleyin.</span>`;
+    $("c-title").textContent = sel.staffId ? staffName(sel.staffId) + "'a teşekkür edin" : "Garsonunuza teşekkür edin";
+    $("c-amounts").innerHTML = AMOUNTS.map(a=>`<button class="amt" data-amt="${a}" aria-pressed="${a===sel.amount && !$("c-custom").value}">${a} ₺</button>`).join("");
+    $("c-stars").innerHTML = [1,2,3,4,5].map(n=>`<button class="star" data-star="${n}" aria-label="${n} yıldız" aria-pressed="${n<=sel.rating}">★</button>`).join("");
+    $("c-total").textContent = tl(sel.amount||0);
+    $("c-pay").disabled = !(sel.staffId && sel.amount>0);
+  }
+  $("c-staff").addEventListener("click",e=>{const b=e.target.closest("[data-staff]"); if(!b) return; sel.staffId=b.dataset.staff; renderCustomer();});
+  $("c-amounts").addEventListener("click",e=>{const b=e.target.closest("[data-amt]"); if(!b) return; $("c-custom").value=""; sel.amount=+b.dataset.amt; renderCustomer();});
+  $("c-custom").addEventListener("input",e=>{ sel.amount = Math.max(0, Math.round(+e.target.value||0)); renderCustomer(); });
+  $("c-stars").addEventListener("click",e=>{const b=e.target.closest("[data-star]"); if(!b) return; const n=+b.dataset.star; sel.rating = sel.rating===n?0:n; renderCustomer();});
+  function step(s){ ["form","checkout","done"].forEach(k=>$("c-step-"+k).hidden = k!==s); }
+  $("c-pay").addEventListener("click",()=>{ $("c-co-amount").textContent = tl(sel.amount); step("checkout"); });
+  $("c-back").addEventListener("click",()=>step("form"));
+  $("c-confirm").addEventListener("click", async ()=>{
+    const btn=$("c-confirm"); btn.disabled=true; btn.textContent="İşleniyor…";
+    const tip = {staffId:sel.staffId, amount:sel.amount, rating:sel.rating, note:$("c-note").value.trim().slice(0,80), table:$("c-table-label").textContent, createdAt:Date.now()};
+    try{
+      await store.addTip(tip);
+      $("c-done-text").textContent = tl(tip.amount) + " bahşişiniz " + staffName(tip.staffId) + " için kaydedildi.";
+      step("done");
+    }catch(e){
+      toast("Kaydedilemedi: bu sayfaya yazma izniniz olmayabilir.");
+    }
+    btn.disabled=false; btn.textContent="Ödemeyi simüle et";
+  });
+  $("c-again").addEventListener("click",()=>{ sel.amount=0; sel.rating=0; $("c-custom").value=""; $("c-note").value=""; step("form"); renderCustomer(); });
+
+  // ---------- Panel ----------
+  function startOfToday(){ const d=new Date(); d.setHours(0,0,0,0); return d.getTime(); }
+  function renderPanel(){
+    const today = tips.filter(t=>t.createdAt>=startOfToday());
+    const sum = a => a.reduce((s,t)=>s+(+t.amount||0),0);
+    $("k-today").textContent = tl(sum(today)); $("k-today-n").textContent = today.length + " işlem";
+    $("k-all").textContent = tl(sum(tips)); $("k-all-n").textContent = tips.length + " işlem";
+    $("k-avg").textContent = tl(tips.length ? Math.round(sum(tips)/tips.length) : 0);
+    const rated = tips.filter(t=>t.rating>0);
+    $("k-rate").textContent = rated.length ? (rated.reduce((s,t)=>s+t.rating,0)/rated.length).toFixed(1) : "–";
+
+    const fee = Math.min(10, Math.max(0, +$("p-fee").value||0))/100;
+    const scope = $("p-range").value==="today" ? today : tips;
+    const gross = sum(scope), net = gross*(1-fee);
+    let rows;
+    if(split==="kisi"){
+      rows = staff.map(s=>{ const g=sum(scope.filter(t=>t.staffId===s.id)); return {name:s.name, val:g*(1-fee)}; });
+      $("p-split-note").textContent = "Her garson kendi QR'ından gelen bahşişi alır. Toplam brüt " + tl(gross) + ", komisyon sonrası net " + tl(Math.round(net*100)/100) + ".";
+    }else{
+      const each = staff.length ? net/staff.length : 0;
+      rows = staff.map(s=>({name:s.name, val:each}));
+      $("p-split-note").textContent = "Komisyon sonrası net " + tl(Math.round(net*100)/100) + " tüm ekibe eşit bölünür. Mutfak ekibi de havuza eklenebilir.";
+    }
+    const max = Math.max(1, ...rows.map(r=>r.val));
+    $("p-bars").innerHTML = rows.length ? rows.map(r=>`<div class="bar"><span class="name">${esc(r.name)}</span><span class="track"><span class="fill" style="width:${(r.val/max*100).toFixed(1)}%;display:block"></span></span><span class="num">${tl(Math.round(r.val*100)/100)}</span></div>`).join("") : `<p class="empty">Garson ekleyince dağıtım burada görünür.</p>`;
+
+    $("p-staff").innerHTML = staff.length ? staff.map(s=>`<div class="staff-item"><span style="font-weight:600">${esc(s.name)}</span><span style="display:flex;gap:6px"><a class="btn ghost small" href="#g-${esc(s.id)}" style="text-decoration:none">Bahşiş ekranı</a><button class="btn ghost small" data-del="${esc(s.id)}">Kaldır</button></span></div>`).join("") : `<p class="empty">Henüz garson yok. İlk garsonu aşağıdan ekleyin.</p>`;
+
+    const recent = [...tips].sort((a,b)=>b.createdAt-a.createdAt).slice(0,25);
+    $("p-count").textContent = tips.length ? "Son " + recent.length + " kayıt" : "";
+    $("p-rows").innerHTML = recent.length ? recent.map(t=>{
+      const d = new Date(t.createdAt);
+      const when = d.toLocaleDateString("tr-TR",{day:"2-digit",month:"short"}) + " " + d.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
+      return `<tr><td class="num">${when}</td><td>${esc(staffName(t.staffId))}${t.example?'<span class="tag">örnek</span>':''}</td><td>${esc(t.table||"–")}</td><td class="r num">${tl(+t.amount||0)}</td><td>${t.rating? "★".repeat(t.rating):"–"}</td><td style="white-space:normal;min-width:140px">${esc(t.note||"")}</td></tr>`;
+    }).join("") : `<tr><td colspan="6" class="empty">Henüz bahşiş yok. Müşteri ekranından bir deneme yapın.</td></tr>`;
+  }
+  document.querySelector(".seg").addEventListener("click",e=>{const b=e.target.closest("[data-split]"); if(!b) return; split=b.dataset.split; document.querySelectorAll("[data-split]").forEach(x=>x.setAttribute("aria-pressed", x===b)); renderPanel();});
+  $("p-fee").addEventListener("input",renderPanel);
+  $("p-range").addEventListener("change",renderPanel);
+  $("p-add").addEventListener("submit",async e=>{
+    e.preventDefault(); const name=$("p-new").value.trim(); if(!name) return;
+    try{ await store.addStaff(name); $("p-new").value=""; toast(name+" eklendi"); }catch(err){ toast("Eklenemedi: garson eklemek için düzenleme izni gerekir."); }
+  });
+  $("p-staff").addEventListener("click",async e=>{
+    const b=e.target.closest("[data-del]"); if(!b) return;
+    if(b.dataset.confirm!=="1"){ b.dataset.confirm="1"; b.textContent="Emin misiniz?"; setTimeout(()=>{ if(b.isConnected){ b.dataset.confirm=""; b.textContent="Kaldır"; } },3000); return; }
+    try{ await store.removeStaff(b.dataset.del); toast("Garson kaldırıldı"); }catch(err){ toast("Kaldırılamadı: düzenleme izni gerekir."); }
+  });
+
+  // ---------- QR ----------
+  let qrKey = "";
+  function renderQR(){
+    const base = ($("q-url").value || PAGE_URL || "").split("#")[0];
+    const key = base + "|" + staff.map(s=>s.id+s.name).join(",");
+    if(key===qrKey) return; qrKey = key;
+    const grid = $("q-grid");
+    if(!staff.length){ grid.innerHTML = `<p class="empty">Garson ekleyince her biri için QR kartı burada oluşur.</p>`; return; }
+    grid.innerHTML = staff.map(s=>`<div class="qr-card"><span class="eyebrow">Kartla bahşiş</span><div class="qr-box" id="qr-${esc(s.id)}"></div><span class="who">${esc(s.name)}</span><span class="muted" style="font-size:.82rem">Telefon kameranızla okutun</span></div>`).join("");
+    staff.forEach(s=>{
+      const el = document.getElementById("qr-"+s.id);
+      if(!base){ el.innerHTML = '<span class="muted" style="font-size:.8rem;color:#5d6b68">Önce yukarıya sayfa linkini girin</span>'; return; }
+      if(window.QRCode){ new QRCode(el,{text: base + "#g-" + s.id, width:160, height:160, colorDark:"#15211f", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M}); }
+      else el.textContent = "QR kütüphanesi yüklenemedi";
+    });
+  }
+  if(PAGE_URL) $("q-url").value = PAGE_URL;
+  $("q-url").addEventListener("input",renderQR);
+
+  function render(){ renderCustomer(); renderPanel(); renderQR(); }
+  init();
+})();
+</script>
