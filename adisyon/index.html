@@ -167,7 +167,7 @@ main{flex:1;padding:12px 16px 120px}
 <div class="app">
   <header>
     <div class="top">
-      <div class="brand"><span class="wm"><b>lou</b>cafebistro</span><small><span class="dot" id="liveDot"></span><span id="liveTxt">Bağlanıyor…</span></small></div>
+      <div class="brand"><span class="wm"><b>lou</b>maidan</span><small><span class="dot" id="liveDot"></span><span id="liveTxt">Bağlanıyor…</span></small></div>
       <button class="btn table-btn" id="tableBtn" aria-label="Masa seç">🍽 <b id="tableName">Masa seç</b></button>
       <button class="btn ghost" id="moreBtn" aria-label="Menü">☰</button>
     </div>
@@ -190,17 +190,17 @@ main{flex:1;padding:12px 16px 120px}
     <div class="sum"><small id="barInfo">Toplam</small><b id="barTotal">0 ₺</b></div>
     <button class="btn" id="sendBtn">🔔 Mutfak</button>
     <button class="btn primary" id="payBtn">💳 Hesap</button>
-    <button class="btn tip" id="tipBtn">💝 TIP</button>
+    <button class="btn tip" id="tipBtn">TIP</button>
   </div>
 </div>
 
 <!-- Masa seçimi -->
 <div class="scrim" id="tablesSheet"><div class="sheet">
   <div class="sheet-top"><h2>Masalar</h2><button class="btn ghost" data-close>Kapat</button></div>
-  <div id="tableGroups"></div>
-  <div class="field"><label>Özel masa / isim aç (Bahçe 3, Paket – Ahmet…)</label>
+  <div class="field" style="margin-top:0"><label>Özel masa / isim aç</label>
     <div style="display:flex;gap:8px"><input class="input" id="newTable" style="flex:1" placeholder="Masa adı"><button class="btn primary" id="addTable">Aç</button></div>
   </div>
+  <div id="tableGroups"></div>
 </div></div>
 
 <!-- Satır düzenle -->
@@ -228,7 +228,7 @@ main{flex:1;padding:12px 16px 120px}
   <div class="field" id="cashField"><label>Alınan nakit (para üstü)</label>
     <input class="input" id="cashIn" type="number" inputmode="decimal" placeholder="örn: 2000">
     <div class="row" style="margin-top:4px"><span>Para üstü</span><b id="change">–</b></div></div>
-  <div class="actions"><button class="btn" id="printBtn">🖨 Yazdır</button><button class="btn tip" id="payTipBtn">💝 TIP QR</button><button class="btn primary" id="closeBtn" style="flex-basis:100%">✓ Ödendi, masayı kapat</button></div>
+  <div class="actions"><button class="btn" id="printBtn">🖨 Yazdır</button><button class="btn tip" id="payTipBtn">TIP QR</button><button class="btn primary" id="closeBtn" style="flex-basis:100%">✓ Ödendi, masayı kapat</button></div>
 </div></div>
 
 <!-- TIP -->
@@ -255,7 +255,6 @@ main{flex:1;padding:12px 16px 120px}
   <div class="row total"><span>Toplam ciro</span><span id="dayTotal"></span></div>
   <h3 style="font-size:13px;color:var(--muted);margin:16px 0 0">BUGÜN KAPANAN HESAPLAR</h3>
   <ul class="hist" id="histList"></ul>
-  <div class="field"><label>Garson adı (bu cihaz)</label><input class="input" id="waiter" placeholder="Adınız (adisyonda görünür)"></div>
   <div class="actions">
     <button class="btn" id="browseBtn">📖 Tüm menü</button>
     <button class="btn danger" id="resetDay">Günü sıfırla</button>
@@ -288,6 +287,7 @@ main{flex:1;padding:12px 16px 120px}
   const GROUPS = [
     {title: "1. Bölüm", tables: [10, 20, 30, 11, 14, 12, 13, 21, 23, 24, 25, 31, 32, 33, 34]},
     {title: "2. Bölüm", tables: [40, 50, 60, 70, 41, 42, 43, 44, 51, 82, 54, 61, 81, 71, 80]},
+    {title: "3. Bölüm · Köy", tables: [100, 103, 300, 303, 400, 403, 500]},
   ];
   const FIXED = GROUPS.flatMap(g => g.tables.map(n => "Masa " + n));
 
@@ -303,7 +303,7 @@ main{flex:1;padding:12px 16px 120px}
 
   // ---------- Cihaza özel ayarlar
   const LKEY = "lou-adisyon-local";
-  let L = {current: null, waiter: "", usage: {}};
+  let L = {current: null, usage: {}};
   try { Object.assign(L, JSON.parse(localStorage.getItem(LKEY) || "{}")); } catch (e) {}
   const saveL = () => { try { localStorage.setItem(LKEY, JSON.stringify(L)); } catch (e) {} };
 
@@ -512,7 +512,7 @@ main{flex:1;padding:12px 16px 120px}
     const t = tableOf(L.current);
     const ex = activeLines(t).find(l => l.id === it.id && !l.sent && (l.note || "") === note && l.price === it.price);
     if (ex) Store.putLine(L.current, {...ex, qty: ex.qty + qty});
-    else Store.putLine(L.current, {uid: uid(), id: it.id, name: it.name, price: it.price, qty, note, sent: 0, at: Date.now(), by: L.waiter || ""});
+    else Store.putLine(L.current, {uid: uid(), id: it.id, name: it.name, price: it.price, qty, note, sent: 0, at: Date.now()});
     if (typeof it.id === "number") { L.usage[it.id] = (L.usage[it.id] || 0) + qty; saveL(); }
     renderPad();
     toast(`${qty} × ${it.name} eklendi`);
@@ -572,7 +572,7 @@ main{flex:1;padding:12px 16px 120px}
       } else {
         pad.innerHTML = `
           <div class="pad-head"><div class="pad-title">${esc(L.current)}</div>
-            <div class="pad-meta">${t ? "Açılış " + hm(t.opened) : "Yeni masa"}${L.waiter ? "<br>" + esc(L.waiter) : ""}</div></div>
+            <div class="pad-meta">${t ? "Açılış " + hm(t.opened) : "Yeni masa"}</div></div>
           <div class="lines-wrap">${linesHTML(lines)}</div>
           <div class="pad-foot">
             <input class="table-note" id="tNote" placeholder="✎ Masa notu (kişi sayısı, alerji…)" value="${esc(t?.note || "")}">
@@ -596,7 +596,7 @@ main{flex:1;padding:12px 16px 120px}
         <button class="body" data-edit>
           <div class="nm">${esc(l.name)}</div>
           ${l.note ? `<div class="note">↳ ${esc(l.note)}</div>` : ""}
-          <div class="st${l.sent ? " sent" : ""}">${l.sent ? "✓ mutfağa gitti " + hm(l.sent) : "● yeni"} · ${l.price ? TL(l.price) : "ikram"}${l.by ? " · " + esc(l.by) : ""}</div>
+          <div class="st${l.sent ? " sent" : ""}">${l.sent ? "✓ mutfağa gitti " + hm(l.sent) : "● yeni"} · ${l.price ? TL(l.price) : "ikram"}</div>
         </button>
         <span class="amt">${TL(l.qty * l.price)}</span>
         <span class="stepper"><button data-dec aria-label="Azalt">−</button><button data-inc aria-label="Arttır">+</button></span>
@@ -712,7 +712,7 @@ main{flex:1;padding:12px 16px 120px}
     const t = tableOf(L.current), lines = activeLines(t), {sub, tot} = payCalc();
     if (lines.some(l => !l.sent) && !confirm("Mutfağa gönderilmemiş ürünler var. Yine de hesabı kapat?")) return;
     const id = "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    Store.closeTable(L.current, {id, table: L.current, lines: lines.map(({uid, name, price, qty, note}) => ({uid, name, price, qty, note})), sub, total: tot, disc, method, at: Date.now(), day: dayKey(), opened: t.opened, waiter: L.waiter || ""});
+    Store.closeTable(L.current, {id, table: L.current, lines: lines.map(({uid, name, price, qty, note}) => ({uid, name, price, qty, note})), sub, total: tot, disc, method, at: Date.now(), day: dayKey(), opened: t.opened});
     L.current = null; saveL();
     hide("#paySheet"); renderPad(); toast("Hesap kapatıldı ✓ " + TL(tot)); openTables();
   };
@@ -720,13 +720,13 @@ main{flex:1;padding:12px 16px 120px}
   // ---------- Yazdırma
   function kitchenTicket(lines) {
     const t = tableOf(L.current);
-    $("#print").innerHTML = `<h1>MUTFAK</h1><div class="c"><b>${esc(L.current)}</b> · ${hm(Date.now())}${L.waiter ? " · " + esc(L.waiter) : ""}</div><hr>
+    $("#print").innerHTML = `<h1>MUTFAK</h1><div class="c"><b>${esc(L.current)}</b> · ${hm(Date.now())}</div><hr>
       <table style="font-size:14px">${lines.map(l => `<tr><td>${l.qty} x ${esc(l.name)}${l.note ? `<br>&nbsp;&nbsp;* ${esc(l.note)}` : ""}</td></tr>`).join("")}</table>${t?.note ? `<hr>Not: ${esc(t.note)}` : ""}`;
   }
   function billTicket(lines, calc) {
     $("#print").innerHTML = `
-      <h1>LOU Cafe Bistro</h1><div class="c">ADİSYON</div><hr>
-      <div>${esc(L.current)}${L.waiter ? " · Garson: " + esc(L.waiter) : ""}<br>${new Date().toLocaleString("tr-TR")}</div><hr>
+      <h1>LOU Maidan</h1><div class="c">ADİSYON</div><hr>
+      <div>${esc(L.current)}<br>${new Date().toLocaleString("tr-TR")}</div><hr>
       <table>${lines.map(l => `<tr><td>${l.qty} x ${esc(l.name)}${l.note ? `<br>&nbsp;&nbsp;* ${esc(l.note)}` : ""}</td><td class="r">${TL(l.qty * l.price)}</td></tr>`).join("")}</table><hr>
       <table><tr><td>Ara toplam</td><td class="r">${TL(calc.sub)}</td></tr>
       ${disc ? `<tr><td>İndirim %${disc}</td><td class="r">−${TL(calc.sub - calc.tot)}</td></tr>` : ""}
@@ -755,7 +755,7 @@ main{flex:1;padding:12px 16px 120px}
       return;
     }
     v.innerHTML = `
-      <div class="tip-brand"><b>lou</b>cafebistro</div>
+      <div class="tip-brand"><b>lou</b>maidan</div>
       <div class="tip-title">Teşekkür ederiz</div>
       <p class="tip-sub">${esc(TIP.msg || "Hizmetimizden memnun kaldıysanız QR'ı okutarak bahşiş gönderebilirsiniz.")}</p>
       <div class="qr-card" id="qrBox"></div>
@@ -790,12 +790,11 @@ main{flex:1;padding:12px 16px 120px}
     $("#dayCount").textContent = h.length;
     $("#dayCash").textContent = TL(by("Nakit")); $("#dayCard").textContent = TL(by("Kart")); $("#dayMix").textContent = TL(by("Karışık"));
     $("#dayTotal").textContent = TL(h.reduce((a, x) => a + x.total, 0));
-    $("#histList").innerHTML = h.length ? h.map(x => `<li><span>${esc(x.table)}<br><small>${hm(x.at)} · ${esc(x.method)}${x.disc ? " · %" + x.disc : ""} · ${x.lines.reduce((a, l) => a + l.qty, 0)} ürün${x.waiter ? " · " + esc(x.waiter) : ""}</small></span><b>${TL(x.total)}</b></li>`).join("") : `<li><small>Bugün kapanan hesap yok.</small></li>`;
+    $("#histList").innerHTML = h.length ? h.map(x => `<li><span>${esc(x.table)}<br><small>${hm(x.at)} · ${esc(x.method)}${x.disc ? " · %" + x.disc : ""} · ${x.lines.reduce((a, l) => a + l.qty, 0)} ürün</small></span><b>${TL(x.total)}</b></li>`).join("") : `<li><small>Bugün kapanan hesap yok.</small></li>`;
     $("#menuDate").textContent = window.MENU_DATE;
     $("#resetDay").style.display = canEdit && !readOnly ? "" : "none";
   }
-  $("#moreBtn").onclick = () => { $("#waiter").value = L.waiter || ""; renderMore(); show("#moreSheet"); };
-  $("#waiter").oninput = e => { L.waiter = e.target.value; saveL(); };
+  $("#moreBtn").onclick = () => { renderMore(); show("#moreSheet"); };
   $("#resetDay").onclick = async () => { if (confirm("Bugünkü kapanan hesap geçmişi silinsin mi? (Açık masalar kalır)")) { await Store.resetDay(); renderMore(); } };
 
   // ---------- Tüm menü
