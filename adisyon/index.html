@@ -107,6 +107,9 @@ main{flex:1;padding:12px 16px 120px}
 .tbl small{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tbl.open{background:var(--accent);color:var(--accent-ink)}
 .tbl.open small{color:inherit;opacity:.85}
+.tbl.sent{background:#cfe6fb;color:#0f3b63}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:0 0 12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:5px}
 .tbl.cur{outline:3px solid var(--margin);outline-offset:2px}
 .field{display:flex;flex-direction:column;gap:4px;margin:10px 0}
 .field label{font-size:12px;color:var(--muted);font-weight:600}
@@ -200,6 +203,7 @@ main{flex:1;padding:12px 16px 120px}
   <div class="field" style="margin-top:0"><label>Özel masa / isim aç</label>
     <div style="display:flex;gap:8px"><input class="input" id="newTable" style="flex:1" placeholder="Masa adı"><button class="btn primary" id="addTable">Aç</button></div>
   </div>
+  <div class="legend"><span><i style="background:var(--chip)"></i>Boş</span><span><i style="background:var(--accent)"></i>Sipariş alındı</span><span><i style="background:#cfe6fb;border:1px solid #9cc7ee"></i>Mutfağa gitti</span></div>
   <div id="tableGroups"></div>
 </div></div>
 
@@ -646,8 +650,9 @@ main{flex:1;padding:12px 16px 120px}
 
   // ---------- Masalar
   function tblBtn(name) {
-    const t = TABLES[slug(name)], open = t && activeLines(t).length;
-    return `<button class="tbl${open ? " open" : ""}${name === L.current ? " cur" : ""}" data-t="${esc(name)}"><b>${esc(name.replace(/^Masa /, ""))}</b><small>${open ? TL(total(t)) : "boş"}</small></button>`;
+    const t = TABLES[slug(name)], lines = activeLines(t), open = lines.length;
+    const sent = open && lines.every(l => l.sent);
+    return `<button class="tbl${sent ? " sent" : open ? " open" : ""}${name === L.current ? " cur" : ""}" data-t="${esc(name)}"><b>${esc(name.replace(/^Masa /, ""))}</b><small>${open ? TL(total(t)) : "boş"}</small></button>`;
   }
   function renderTables() {
     const others = Object.values(TABLES).map(t => t.name).filter(n => n && !FIXED.includes(n));
