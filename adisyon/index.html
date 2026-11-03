@@ -313,10 +313,11 @@ main{flex:1;padding:12px 16px 120px}
 
   // ---------- Ortak veri (db) ya da yerel yedek
   // TABLES: { slug: {name, note, opened, lines: {uid: line|null}} }
-  let TABLES = {}, HISTORY = [], TIP = {}, db = null, canEdit = true, readOnly = false;
+  const DEFAULT_TIP = {iban: "TR980001009010025173305004", name: "İhsan Furkan Ağır", msg: ""};
+  let TABLES = {}, HISTORY = [], TIP = {...DEFAULT_TIP}, db = null, canEdit = true, readOnly = false;
   const SKEY = "lou-adisyon-shared-local";
   function loadLocalShared() {
-    try { const s = JSON.parse(localStorage.getItem(SKEY) || "{}"); TABLES = s.tables || {}; HISTORY = s.history || []; TIP = s.tip || {}; } catch (e) {}
+    try { const s = JSON.parse(localStorage.getItem(SKEY) || "{}"); TABLES = s.tables || {}; HISTORY = s.history || []; TIP = s.tip || {...DEFAULT_TIP}; } catch (e) {}
   }
   const saveLocalShared = () => { try { localStorage.setItem(SKEY, JSON.stringify({tables: TABLES, history: HISTORY, tip: TIP})); } catch (e) {} };
 
@@ -437,7 +438,7 @@ main{flex:1;padding:12px 16px 120px}
       if ($("#moreSheet").classList.contains("show")) renderMore();
     }, e => console.warn(e));
     db.doc("settings/tip").onSnapshot(snap => {
-      TIP = snap.exists ? snap.data() : {};
+      TIP = snap.exists && snap.data().iban ? snap.data() : {...DEFAULT_TIP};
       if ($("#tipSheet").classList.contains("show") && $("#tipEdit").style.display === "none") renderTip();
     }, e => console.warn(e));
   }
@@ -762,11 +763,11 @@ main{flex:1;padding:12px 16px 120px}
     v.innerHTML = `
       <div class="tip-brand"><b>lou</b>maidan</div>
       <div class="tip-title">Teşekkür ederiz</div>
-      <p class="tip-sub">${esc(TIP.msg || "Hizmetimizden memnun kaldıysanız QR'ı okutarak bahşiş gönderebilirsiniz.")}</p>
+      <p class="tip-sub">${esc(TIP.msg || "Hizmetimizden memnun kaldıysanız QR'ı okutup dilediğiniz tutarda bahşiş gönderebilirsiniz.")}</p>
       <div class="qr-card" id="qrBox"></div>
       <div class="holder">${esc(TIP.name || "")}</div>
       <div class="iban">${esc(ibanFmt(iban))}</div>
-      <p class="tip-sub" style="font-size:12px">Telefon kamerası veya banka uygulamasıyla okutun · IBAN kopyalanır</p>`;
+      <p class="tip-sub" style="font-size:12px">Banka uygulamanızda QR / IBAN'a para gönder ile okutun, tutarı siz belirleyin</p>`;
     const box = $("#qrBox");
     if (window.QRCode) new QRCode(box, {text: iban, width: 512, height: 512, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M});
     else box.innerHTML = `<div style="line-height:1.4;color:#333;padding:20px">QR yüklenemedi.<br>IBAN'ı aşağıdan kullanın.</div>`;
