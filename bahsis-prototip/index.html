@@ -319,7 +319,7 @@ td.r,th.r{text-align:right}
     $("c-staff").innerHTML = staff.length
       ? staff.map(s=>`<button class="chip" data-staff="${esc(s.id)}" aria-pressed="${s.id===sel.staffId}">${esc(s.name)}</button>`).join("")
       : `<span class="empty">Henüz garson eklenmedi. Yönetici panelinden ekleyin.</span>`;
-    $("c-title").textContent = sel.staffId ? staffName(sel.staffId) + "'a teşekkür edin" : "Garsonunuza teşekkür edin";
+    $("c-title").textContent = sel.staffId ? staffName(sel.staffId) + " için bahşiş" : "Garsonunuza teşekkür edin";
     $("c-amounts").innerHTML = AMOUNTS.map(a=>`<button class="amt" data-amt="${a}" aria-pressed="${a===sel.amount && !$("c-custom").value}">${a} ₺</button>`).join("");
     $("c-stars").innerHTML = [1,2,3,4,5].map(n=>`<button class="star" data-star="${n}" aria-label="${n} yıldız" aria-pressed="${n<=sel.rating}">★</button>`).join("");
     $("c-total").textContent = tl(sel.amount||0);
