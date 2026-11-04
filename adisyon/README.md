@@ -14,7 +14,7 @@ Kurulum yok: `index.html` dosyasını tarayıcıda açmanız yeterli (veriler ci
 - Ürün listesinde **ⓘ** → içerik ve gramaj (müşteriye önermek için). Arama içeriklerde de çalışır (örn. `avokado`, `vegan`).
 - Satıra dokun → içerik görünür; adet, not, fiyat (ikram = 0) düzenle. `−`/`+` ile hızlı adet.
 - **Mutfağa** → yeni (sarı) kalemleri gönderildi olarak işaretler.
-- **Hesap** → kişi başı bölüştürme, nakit/kart, para üstü, masayı kapatma.
+- **Hesap** → kişi başı bölüştürme, ödeme şekli (varsayılan kart), masayı kapatma.
 - **TIP** → bahşiş IBAN'ının QR kodu; müşteriye gösterilir. IBAN'ı sayfa sahibi/editörü "IBAN ayarla" ile girer.
 - **☰** → gün sonu ciro özeti (nakit/kart), kapanan hesaplar, tüm menü. Tüm garsonlar aynı ekranı ortak kullanır; ad girmek gerekmez.
 

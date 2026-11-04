@@ -238,10 +238,7 @@ main{flex:1;padding:12px 16px 120px}
     <div class="seg" id="splitSeg"></div>
     <div class="row" style="margin-top:6px"><span>Kişi başı</span><b id="perPerson"></b></div></div>
   <div class="field"><label>Ödeme şekli</label>
-    <div class="seg" id="methodSeg"><button data-m="Nakit" class="on">💵 Nakit</button><button data-m="Kart">💳 Kart</button><button data-m="Karışık">Karışık</button></div></div>
-  <div class="field" id="cashField"><label>Alınan nakit (para üstü)</label>
-    <input class="input" id="cashIn" type="number" inputmode="decimal" placeholder="örn: 2000">
-    <div class="row" style="margin-top:4px"><span>Para üstü</span><b id="change">–</b></div></div>
+    <div class="seg" id="methodSeg"><button data-m="Kart" class="on">💳 Kart</button><button data-m="Nakit">💵 Nakit</button><button data-m="Karışık">Karışık</button></div></div>
   <div class="actions"><button class="btn tip" id="payTipBtn">TIP QR</button><button class="btn primary" id="closeBtn">✓ Ödendi, masayı kapat</button></div>
 </div></div>
 
@@ -720,21 +717,18 @@ main{flex:1;padding:12px 16px 120px}
   };
 
   // ---------- Hesap
-  let disc = 0, split = 1, method = "Nakit";
+  let disc = 0, split = 1, method = "Kart";
   function payCalc() {
     const sub = total(tableOf(L.current)), tot = Math.round(sub * (100 - disc)) / 100;
         $("#payTotal").textContent = TL(tot) + (disc ? ` (−%${disc})` : "");
     $("#perPerson").textContent = TL(Math.ceil(tot / split * 100) / 100);
-    const cash = parseFloat($("#cashIn").value);
-    $("#change").textContent = isNaN(cash) ? "–" : (cash >= tot ? TL(cash - tot) : "Eksik: " + TL(tot - cash));
-    $("#cashField").style.display = method === "Kart" ? "none" : "";
     return {sub, tot};
   }
   $("#payBtn").onclick = () => {
-    disc = 0; split = 1; method = "Nakit"; $("#cashIn").value = "";
+    disc = 0; split = 1; method = "Kart";
     $("#payTable").textContent = L.current;
     $("#splitSeg").innerHTML = [1, 2, 3, 4, 5, 6, 8].map(n => `<button data-s="${n}" class="${n === 1 ? "on" : ""}">${n}</button>`).join("");
-    [...$("#methodSeg").children].forEach(b => b.classList.toggle("on", b.dataset.m === "Nakit"));
+    [...$("#methodSeg").children].forEach(b => b.classList.toggle("on", b.dataset.m === "Kart"));
     payCalc(); show("#paySheet");
   };
   const segPick = (sel, attr, fn) => $(sel).addEventListener("click", e => {
@@ -743,7 +737,6 @@ main{flex:1;padding:12px 16px 120px}
   });
   segPick("#splitSeg", "s", v => split = +v);
   segPick("#methodSeg", "m", v => method = v);
-  $("#cashIn").oninput = payCalc;
   $("#payTipBtn").onclick = () => { hide("#paySheet"); openTip(); };
   $("#closeBtn").onclick = async () => {
     if (readOnly) { toast("Yazma yetkiniz yok"); return; }
