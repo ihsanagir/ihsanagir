@@ -233,10 +233,7 @@ main{flex:1;padding:12px 16px 120px}
 <!-- Hesap -->
 <div class="scrim" id="paySheet"><div class="sheet">
   <div class="sheet-top"><h2>Hesap – <span id="payTable"></span></h2><button class="btn ghost" data-close>Kapat</button></div>
-  <div class="row"><span>Ara toplam</span><span id="paySub"></span></div>
-  <div class="field"><label>İndirim</label>
-    <div class="seg" id="discSeg"><button data-d="0" class="on">Yok</button><button data-d="5">%5</button><button data-d="10">%10</button><button data-d="15">%15</button><button data-d="20">%20</button></div></div>
-  <div class="row total"><span>Ödenecek</span><span id="payTotal"></span></div>
+  <div class="row total" style="border-top:0;margin-top:0;padding-top:0"><span>Ödenecek</span><span id="payTotal"></span></div>
   <div class="field"><label>Kişi sayısı (bölüştür)</label>
     <div class="seg" id="splitSeg"></div>
     <div class="row" style="margin-top:6px"><span>Kişi başı</span><b id="perPerson"></b></div></div>
@@ -245,7 +242,7 @@ main{flex:1;padding:12px 16px 120px}
   <div class="field" id="cashField"><label>Alınan nakit (para üstü)</label>
     <input class="input" id="cashIn" type="number" inputmode="decimal" placeholder="örn: 2000">
     <div class="row" style="margin-top:4px"><span>Para üstü</span><b id="change">–</b></div></div>
-  <div class="actions"><button class="btn" id="printBtn">🖨 Yazdır</button><button class="btn tip" id="payTipBtn">TIP QR</button><button class="btn primary" id="closeBtn" style="flex-basis:100%">✓ Ödendi, masayı kapat</button></div>
+  <div class="actions"><button class="btn tip" id="payTipBtn">TIP QR</button><button class="btn primary" id="closeBtn">✓ Ödendi, masayı kapat</button></div>
 </div></div>
 
 <!-- TIP -->
@@ -726,8 +723,7 @@ main{flex:1;padding:12px 16px 120px}
   let disc = 0, split = 1, method = "Nakit";
   function payCalc() {
     const sub = total(tableOf(L.current)), tot = Math.round(sub * (100 - disc)) / 100;
-    $("#paySub").textContent = TL(sub);
-    $("#payTotal").textContent = TL(tot) + (disc ? ` (−%${disc})` : "");
+        $("#payTotal").textContent = TL(tot) + (disc ? ` (−%${disc})` : "");
     $("#perPerson").textContent = TL(Math.ceil(tot / split * 100) / 100);
     const cash = parseFloat($("#cashIn").value);
     $("#change").textContent = isNaN(cash) ? "–" : (cash >= tot ? TL(cash - tot) : "Eksik: " + TL(tot - cash));
@@ -738,7 +734,6 @@ main{flex:1;padding:12px 16px 120px}
     disc = 0; split = 1; method = "Nakit"; $("#cashIn").value = "";
     $("#payTable").textContent = L.current;
     $("#splitSeg").innerHTML = [1, 2, 3, 4, 5, 6, 8].map(n => `<button data-s="${n}" class="${n === 1 ? "on" : ""}">${n}</button>`).join("");
-    [...$("#discSeg").children].forEach(b => b.classList.toggle("on", b.dataset.d === "0"));
     [...$("#methodSeg").children].forEach(b => b.classList.toggle("on", b.dataset.m === "Nakit"));
     payCalc(); show("#paySheet");
   };
@@ -746,11 +741,9 @@ main{flex:1;padding:12px 16px 120px}
     const b = e.target.closest("button"); if (!b) return;
     [...$(sel).children].forEach(x => x.classList.toggle("on", x === b)); fn(b.dataset[attr]); payCalc();
   });
-  segPick("#discSeg", "d", v => disc = +v);
   segPick("#splitSeg", "s", v => split = +v);
   segPick("#methodSeg", "m", v => method = v);
   $("#cashIn").oninput = payCalc;
-  $("#printBtn").onclick = () => billTicket(activeLines(tableOf(L.current)), payCalc());
   $("#payTipBtn").onclick = () => { hide("#paySheet"); openTip(); };
   $("#closeBtn").onclick = async () => {
     if (readOnly) { toast("Yazma yetkiniz yok"); return; }
@@ -767,18 +760,6 @@ main{flex:1;padding:12px 16px 120px}
     const t = tableOf(L.current);
     $("#print").innerHTML = `<h1>MUTFAK</h1><div class="c"><b>${esc(L.current)}</b> · ${hm(Date.now())}</div><hr>
       <table style="font-size:14px">${lines.map(l => `<tr><td>${l.qty} x ${esc(l.name)}${l.note ? `<br>&nbsp;&nbsp;* ${esc(l.note)}` : ""}</td></tr>`).join("")}</table>${t?.note ? `<hr>Not: ${esc(t.note)}` : ""}`;
-  }
-  function billTicket(lines, calc) {
-    $("#print").innerHTML = `
-      <h1>LOU Maidan</h1><div class="c">ADİSYON</div><hr>
-      <div>${esc(L.current)}<br>${new Date().toLocaleString("tr-TR")}</div><hr>
-      <table>${lines.map(l => `<tr><td>${l.qty} x ${esc(l.name)}${l.note ? `<br>&nbsp;&nbsp;* ${esc(l.note)}` : ""}</td><td class="r">${TL(l.qty * l.price)}</td></tr>`).join("")}</table><hr>
-      <table><tr><td>Ara toplam</td><td class="r">${TL(calc.sub)}</td></tr>
-      ${disc ? `<tr><td>İndirim %${disc}</td><td class="r">−${TL(calc.sub - calc.tot)}</td></tr>` : ""}
-      <tr><td><b>TOPLAM</b></td><td class="r"><b>${TL(calc.tot)}</b></td></tr>
-      ${split > 1 ? `<tr><td>Kişi başı (${split})</td><td class="r">${TL(Math.ceil(calc.tot / split * 100) / 100)}</td></tr>` : ""}</table>
-      <hr><div class="c">Fiyatlara tüm vergiler dahildir.<br>Bu belge mali değeri olmayan bilgi fişidir.<br>Afiyet olsun!</div>`;
-    window.print();
   }
 
   // ---------- TIP
