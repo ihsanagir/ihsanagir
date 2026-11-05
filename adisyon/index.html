@@ -231,6 +231,7 @@ main{flex:1;padding:12px 16px 120px}
   <div class="sheet-top"><h2 id="lsName">Ürün</h2><button class="btn ghost" data-close>Kapat</button></div>
   <p class="ls-desc" id="lsDesc"></p>
   <div class="big-qty"><button id="lsMinus">−</button><span id="lsQty">1</span><button id="lsPlus">+</button></div>
+  <p class="hint" id="lsLocked" style="text-align:center;margin:-4px 0 6px">Mutfağa gitti · adet ve not değiştirilemez</p>
   <div class="field"><label>Not (mutfağa)</label><input class="input" id="lsNote" placeholder="örn: az pişmiş, soğansız">
     <div class="quick" id="lsQuick"></div></div>
   <div class="field"><label>Birim fiyat (₺) — ikram için 0</label><input class="input" id="lsPrice" type="number" inputmode="decimal" min="0"></div>
@@ -645,7 +646,7 @@ main{flex:1;padding:12px 16px 120px}
           <div class="st${l.sent ? " sent" : ""}">${l.sent ? "✓ mutfağa gitti " + hm(l.sent) : "● yeni"} · ${l.price ? TL(l.price) : "ikram"}</div>
         </button>
         <span class="amt">${TL(l.qty * l.price)}</span>
-        <span class="stepper"><button data-dec aria-label="Azalt">−</button><button data-inc aria-label="Arttır">+</button></span>
+        ${l.sent ? "" : `<span class="stepper"><button data-dec aria-label="Azalt">−</button><button data-inc aria-label="Arttır">+</button></span>`}
       </li>`).join("")}</ul>`;
   }
 
@@ -653,6 +654,7 @@ main{flex:1;padding:12px 16px 120px}
     const li = e.target.closest(".ln"); if (!li) return;
     const t = tableOf(L.current), l = t && t.lines[li.dataset.uid]; if (!l) return;
     if (readOnly && !e.target.closest("[data-edit]")) { toast("Yazma yetkiniz yok"); return; }
+    if (l.sent && (e.target.closest("[data-inc]") || e.target.closest("[data-dec]"))) return;
     if (e.target.closest("[data-inc]")) { Store.putLine(L.current, {...l, qty: l.qty + 1}); renderPad(); }
     else if (e.target.closest("[data-dec]")) {
       if (l.qty > 1) Store.putLine(L.current, {...l, qty: l.qty - 1});
@@ -670,11 +672,14 @@ main{flex:1;padding:12px 16px 120px}
     const it = typeof l.id === "number" ? ITEMS[l.id] : null;
     $("#lsDesc").innerHTML = it && it.desc ? descHTML(it.desc) : ""; $("#lsDesc").style.display = it && it.desc ? "" : "none";
     $("#lsNote").value = l.note || ""; $("#lsPrice").value = l.price;
-    $("#lsQuick").innerHTML = QUICK.map(q => `<button>${q}</button>`).join("");
+    $("#lsQuick").innerHTML = QUICK.filter(q => !l.sent || q === "ikram").map(q => `<button>${q}</button>`).join("");
+    const locked = !!l.sent;
+    $("#lsMinus").style.visibility = $("#lsPlus").style.visibility = locked ? "hidden" : "";
+    $("#lsNote").disabled = locked; $("#lsLocked").style.display = locked ? "" : "none";
     show("#lineSheet");
   }
-  $("#lsMinus").onclick = () => { eQty = Math.max(1, eQty - 1); $("#lsQty").textContent = eQty; };
-  $("#lsPlus").onclick = () => { eQty++; $("#lsQty").textContent = eQty; };
+  $("#lsMinus").onclick = () => { if (editing.sent) return; eQty = Math.max(1, eQty - 1); $("#lsQty").textContent = eQty; };
+  $("#lsPlus").onclick = () => { if (editing.sent) return; eQty++; $("#lsQty").textContent = eQty; };
   $("#lsQuick").onclick = e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.textContent === "ikram") { $("#lsPrice").value = 0; return; }
@@ -683,12 +688,14 @@ main{flex:1;padding:12px 16px 120px}
   $("#lsSave").onclick = () => {
     if (readOnly) { toast("Yazma yetkiniz yok"); return; }
     const note = $("#lsNote").value.trim(), p = parseFloat($("#lsPrice").value);
-    const next = {...editing, qty: eQty, note, price: !isNaN(p) && p >= 0 ? p : editing.price};
-    if (note !== (editing.note || "") && editing.sent) next.sent = 0; // değişiklik mutfağa tekrar gitsin
+    const next = editing.sent
+      ? {...editing, price: !isNaN(p) && p >= 0 ? p : editing.price} // mutfağa gitti: sadece fiyat (ikram)
+      : {...editing, qty: eQty, note, price: !isNaN(p) && p >= 0 ? p : editing.price};
     Store.putLine(L.current, next); renderPad(); hide("#lineSheet");
   };
-  $("#lsDelete").onclick = () => {
+  $("#lsDelete").onclick = async () => {
     if (readOnly) { toast("Yazma yetkiniz yok"); return; }
+    if (editing.sent && !(await ask("Ürün silinsin mi?", `"${editing.name}" mutfağa gitti.`, [["y", "Sil", "btn primary"]]))) return;
     Store.delLine(L.current, editing.uid); renderPad(); hide("#lineSheet"); toast("Silindi");
   };
 
