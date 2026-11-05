@@ -635,7 +635,7 @@ main{flex:1;padding:12px 16px 120px}
     $("#payBtn").disabled = !lines.length;
   }
   function linesHTML(lines) {
-    if (!lines.length) return `<div class="pad-empty"><div class="big">Adisyon boş</div>Yukarıya ürün adını yaz. <br><b>2 menemen</b> → 2 adet · <b>sezar / sossuz</b> → notlu · <b>Pasta = 500</b> → menü dışı ürün</div>`;
+    if (!lines.length) return `<div class="pad-empty"><div class="big">Adisyon boş</div>Yukarıya ürün adını yaz.</div>`;
     return `<ul class="lines">${lines.map(l => `
       <li class="ln${l.sent ? "" : " new"}" data-uid="${esc(l.uid)}">
         <span class="q">${l.qty}</span>
