@@ -1,4 +1,4 @@
-# LOU Adisyon — Garson Sipariş Defteri
+# Captain Order — Garson Sipariş Defteri
 
 LOU Cafe Bistro menüsü (fiyatlar: 01 Mayıs 2026) için telefonda çalışan dijital adisyon.
 Kurulum yok: `index.html` dosyasını tarayıcıda açmanız yeterli (veriler cihazda saklanır).
