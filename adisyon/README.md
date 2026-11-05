@@ -15,7 +15,7 @@ Kurulum yok: `index.html` dosyasını tarayıcıda açmanız yeterli (veriler ci
 - Satıra dokun → içerik görünür; adet, not, fiyat (ikram = 0) düzenle. `−`/`+` ile hızlı adet.
 - **Mutfağa** → yeni (sarı) kalemleri gönderildi olarak işaretler.
 - **Hesap** → kişi başı bölüştürme, ödeme şekli (varsayılan kart), masayı kapatma.
-- **TIP** → bahşiş IBAN'ının QR kodu; müşteriye gösterilir. IBAN'ı sayfa sahibi/editörü "IBAN ayarla" ile girer.
+- **TIP** → 1. sayfa bahşiş IBAN QR'ı; kaydırınca 2. sayfa Google yorum QR'ı. IBAN ve yorum linki "Ayarlar"dan (sahip/editör) değiştirilir.
 - **☰** → gün sonu ciro özeti (nakit/kart), kapanan hesaplar, tüm menü. Tüm garsonlar aynı ekranı ortak kullanır; ad girmek gerekmez.
 
 Menüyü güncellemek için `menu.js` dosyasındaki listeyi düzenleyin.

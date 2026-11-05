@@ -144,7 +144,14 @@ main{flex:1;padding:12px 16px 120px}
 
 /* TIP */
 #tipSheet .sheet{max-height:100vh;height:100%;border-radius:0;display:flex;flex-direction:column}
-.tip-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:8px 0}
+.tip-body{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;overscroll-behavior-x:contain}
+.tip-body::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:8px 16px;overflow-y:auto}
+.dots{display:flex;justify-content:center;align-items:center;gap:8px;padding:6px 0}
+.dots button{border:0;padding:0;width:8px;height:8px;border-radius:99px;background:var(--line);transition:width .2s,background .2s}
+.dots button.on{width:22px;background:var(--accent)}
+.swipe-hint{font-size:12px;color:var(--muted);margin:0}
+.stars{color:#f4b400;font-size:24px;letter-spacing:4px;line-height:1}
 .tip-title{font-size:30px;font-weight:700;line-height:1.1;color:var(--accent);letter-spacing:-.01em}
 .tip-brand{font-weight:300;letter-spacing:.08em;color:var(--muted);font-size:14px}
 .tip-brand b{font-weight:700;color:var(--accent)}
@@ -246,14 +253,17 @@ main{flex:1;padding:12px 16px 120px}
 <div class="scrim" id="tipSheet"><div class="sheet">
   <div class="sheet-top"><span></span><button class="btn ghost" data-close>Kapat</button></div>
   <div class="tip-body" id="tipView"></div>
+  <div class="dots" id="tipDots"><button class="on" data-s="0" aria-label="Bahşiş"></button><button data-s="1" aria-label="Google yorum"></button></div>
   <div id="tipEdit" style="display:none">
     <div class="field"><label>IBAN</label><input class="input" id="tipIban" placeholder="TR00 0000 0000 0000 0000 0000 00" autocomplete="off" style="font-family:ui-monospace,Menlo,monospace"></div>
     <div class="field"><label>Alıcı adı soyadı</label><input class="input" id="tipName" placeholder="Hesap sahibinin adı"></div>
     <div class="field"><label>Müşteriye mesaj (isteğe bağlı)</label><input class="input" id="tipMsg" placeholder="Teşekkür ederiz! ❤"></div>
+    <div class="field"><label>Google yorum linki veya Place ID</label><input class="input" id="tipReview" placeholder="https://g.page/r/…/review" autocomplete="off">
+      <p class="hint">Google İşletme Profili → “Yorum iste” bölümündeki linki yapıştırın. Boş bırakılırsa Google Haritalar'da LOU Maidan araması açılır.</p></div>
     <div class="err" id="tipErr"></div>
     <div class="actions"><button class="btn" id="tipCancel">Vazgeç</button><button class="btn primary" id="tipSave">Kaydet</button></div>
   </div>
-  <div class="actions" id="tipActions"><button class="btn" id="tipCopy">📋 IBAN'ı kopyala</button><button class="btn" id="tipEditBtn">✎ IBAN ayarla</button></div>
+  <div class="actions" id="tipActions"><button class="btn" id="tipCopy">📋 IBAN'ı kopyala</button><button class="btn" id="tipEditBtn">✎ Ayarlar</button></div>
 </div></div>
 
 <!-- Diğer menü -->
@@ -737,7 +747,7 @@ main{flex:1;padding:12px 16px 120px}
   });
   segPick("#splitSeg", "s", v => split = +v);
   segPick("#methodSeg", "m", v => method = v);
-  $("#payTipBtn").onclick = () => { hide("#paySheet"); openTip(); };
+  $("#payTipBtn").onclick = () => { hide("#paySheet"); openTip(0); };
   $("#closeBtn").onclick = async () => {
     if (readOnly) { toast("Yazma yetkiniz yok"); return; }
     const t = tableOf(L.current), lines = activeLines(t), {sub, tot} = payCalc();
@@ -765,38 +775,72 @@ main{flex:1;padding:12px 16px 120px}
     let m = 0; for (const ch of r) m = (m * 10 + +ch) % 97;
     return m === 1;
   }
+  const DEFAULT_REVIEW = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent("LOU Cafe Bistro Maidan AVM Çankaya Ankara");
+  function reviewUrl(v) {
+    v = (v || "").trim();
+    if (/^ChI[\w-]{10,}$/.test(v)) return "https://search.google.com/local/writereview?placeid=" + v;
+    if (/^https?:\/\//i.test(v)) return v;
+    return DEFAULT_REVIEW;
+  }
+  let tipSlide = 0;
+  function qrInto(box, text) {
+    if (window.QRCode) new QRCode(box, {text, width: 512, height: 512, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M});
+    else box.innerHTML = `<div style="line-height:1.4;color:#333;padding:20px">QR yüklenemedi.</div>`;
+  }
   function renderTip() {
     const v = $("#tipView"), iban = ibanClean(TIP.iban);
     $("#tipEditBtn").style.display = canEdit && !readOnly ? "" : "none";
-    $("#tipCopy").style.display = iban ? "" : "none";
-    if (!iban) {
-      v.innerHTML = `<div class="tip-title">TIP</div><p class="tip-empty">Henüz bahşiş IBAN'ı girilmedi.${canEdit ? " Aşağıdan <b>IBAN ayarla</b>'ya dokunun." : " Lütfen yöneticiye bildirin."}</p>`;
-      return;
-    }
-    v.innerHTML = `
+    const tipSlideHTML = iban ? `
       <div class="tip-brand"><b>lou</b>maidan</div>
       <div class="tip-title">Teşekkür ederiz</div>
       <p class="tip-sub">${esc(TIP.msg || "Hizmetimizden memnun kaldıysanız QR'ı okutup dilediğiniz tutarda bahşiş gönderebilirsiniz.")}</p>
       <div class="qr-card" id="qrBox"></div>
       <div class="holder">${esc(TIP.name || "")}</div>
       <div class="iban">${esc(ibanFmt(iban))}</div>
-      <p class="tip-sub" style="font-size:12px">Banka uygulamanızda QR / IBAN'a para gönder ile okutun, tutarı siz belirleyin</p>`;
-    const box = $("#qrBox");
-    if (window.QRCode) new QRCode(box, {text: iban, width: 512, height: 512, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M});
-    else box.innerHTML = `<div style="line-height:1.4;color:#333;padding:20px">QR yüklenemedi.<br>IBAN'ı aşağıdan kullanın.</div>`;
+      <p class="tip-sub" style="font-size:12px">Banka uygulamanızda QR / IBAN'a para gönder ile okutun, tutarı siz belirleyin</p>
+      <p class="swipe-hint">Google yorumu için kaydırın →</p>`
+      : `<div class="tip-title">TIP</div><p class="tip-empty">Henüz bahşiş IBAN'ı girilmedi.</p>`;
+    v.innerHTML = `
+      <section class="slide">${tipSlideHTML}</section>
+      <section class="slide">
+        <div class="tip-brand"><b>lou</b>maidan</div>
+        <div class="tip-title">Bizi değerlendirin</div>
+        <div class="stars">★★★★★</div>
+        <p class="tip-sub">Deneyiminizi Google'da paylaşın. QR'ı okutun, yorumunuzu doğrudan yazın.</p>
+        <div class="qr-card" id="qrReview"></div>
+        <p class="tip-sub" style="font-size:12px">Telefon kamerasıyla okutun · Google'da yorum sayfası açılır</p>
+        <p class="swipe-hint">← Bahşiş için geri kaydırın</p>
+      </section>`;
+    if (iban) qrInto($("#qrBox"), iban);
+    qrInto($("#qrReview"), reviewUrl(TIP.review));
+    v.scrollLeft = tipSlide * v.clientWidth;
+    syncTipSlide();
   }
-  function openTip() { $("#tipEdit").style.display = "none"; $("#tipActions").style.display = ""; $("#tipView").style.display = ""; renderTip(); show("#tipSheet"); }
-  $("#tipBtn").onclick = openTip;
+  function syncTipSlide() {
+    const v = $("#tipView");
+    tipSlide = v.clientWidth ? Math.round(v.scrollLeft / v.clientWidth) : tipSlide;
+    [...$("#tipDots").children].forEach((d, i) => d.classList.toggle("on", i === tipSlide));
+    $("#tipCopy").style.display = ibanClean(TIP.iban) && tipSlide === 0 ? "" : "none";
+  }
+  $("#tipView").addEventListener("scroll", () => { clearTimeout(syncTipSlide.t); syncTipSlide.t = setTimeout(syncTipSlide, 60); }, {passive: true});
+  $("#tipDots").onclick = e => { const d = e.target.closest("[data-s]"); if (d) { const v = $("#tipView"); v.scrollTo({left: +d.dataset.s * v.clientWidth, behavior: "smooth"}); } };
+  function openTip(slide) {
+    $("#tipEdit").style.display = "none"; $("#tipActions").style.display = ""; $("#tipView").style.display = ""; $("#tipDots").style.display = "";
+    if (typeof slide === "number") tipSlide = slide;
+    show("#tipSheet"); renderTip();
+  }
+  $("#tipBtn").onclick = () => openTip(0);
   $("#tipEditBtn").onclick = () => {
-    $("#tipIban").value = ibanFmt(TIP.iban); $("#tipName").value = TIP.name || ""; $("#tipMsg").value = TIP.msg || ""; $("#tipErr").textContent = "";
-    $("#tipView").style.display = "none"; $("#tipActions").style.display = "none"; $("#tipEdit").style.display = "";
+    $("#tipIban").value = ibanFmt(TIP.iban); $("#tipName").value = TIP.name || ""; $("#tipMsg").value = TIP.msg || ""; $("#tipReview").value = TIP.review || ""; $("#tipErr").textContent = "";
+    $("#tipView").style.display = "none"; $("#tipDots").style.display = "none"; $("#tipActions").style.display = "none"; $("#tipEdit").style.display = "";
   };
-  $("#tipCancel").onclick = openTip;
+  $("#tipCancel").onclick = () => openTip();
   $("#tipSave").onclick = async () => {
-    const iban = ibanClean($("#tipIban").value);
+    const iban = ibanClean($("#tipIban").value), review = $("#tipReview").value.trim();
     if (!ibanValid(iban)) { $("#tipErr").textContent = "Geçersiz IBAN. TR ile başlayan 26 karakterlik IBAN girin."; return; }
-    try { await Store.setTip({iban, name: $("#tipName").value.trim(), msg: $("#tipMsg").value.trim(), updatedAt: Date.now()}); toast("IBAN kaydedildi"); openTip(); }
-    catch (e) { $("#tipErr").textContent = "Kaydedilemedi: IBAN'ı yalnızca sayfa sahibi/editörü değiştirebilir."; }
+    if (review && !/^https?:\/\//i.test(review) && !/^ChI[\w-]{10,}$/.test(review)) { $("#tipErr").textContent = "Yorum linki https:// ile başlamalı ya da ChI… ile başlayan bir Place ID olmalı."; return; }
+    try { await Store.setTip({iban, name: $("#tipName").value.trim(), msg: $("#tipMsg").value.trim(), review, updatedAt: Date.now()}); toast("Kaydedildi"); openTip(); }
+    catch (e) { $("#tipErr").textContent = "Kaydedilemedi: ayarları yalnızca sayfa sahibi/editörü değiştirebilir."; }
   };
   $("#tipCopy").onclick = async () => {
     try { await navigator.clipboard.writeText(ibanClean(TIP.iban)); toast("IBAN kopyalandı"); } catch (e) { toast(ibanFmt(TIP.iban)); }
