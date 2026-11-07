@@ -158,6 +158,13 @@ canvas.bottle.pour{animation:pour .9s ease-in-out}
 textarea{width:100%;resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:12px}
 .btn:focus-visible,.chip:focus-visible,.seg button:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){canvas.bottle.pour{animation:none}.toast{transition:none}}
+.banner{margin:0 0 14px;padding:10px 14px;border-radius:12px;border:1px solid rgba(232,160,74,.45);background:rgba(232,160,74,.08);color:#f1cf9e;font-size:14px}
+.sync{display:inline-flex;align-items:center;gap:7px;margin-top:10px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:#5d7774}
+.sync.on{color:var(--text)}
+.sync.on::before{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.by{color:var(--muted);font-weight:400}
+.btn:disabled,input:disabled{opacity:.45;cursor:not-allowed}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;
   background:#0f2a2d;border:1px solid var(--neon);color:#fff;padding:10px 14px;border-radius:12px;font-size:14px;transition:.25s;max-width:calc(100% - 32px);box-shadow:0 0 20px rgba(243,188,214,.2)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -170,6 +177,7 @@ textarea{width:100%;resize:vertical;font-family:ui-monospace,Menlo,monospace;fon
     <div class="brand">
       <h1>Şişe <em>Takip</em></h1>
       <p>Barda açılan şişeler · kalan miktar · kaç tek / duble daha</p>
+      <span class="sync" id="syncState">Bağlanıyor…</span>
     </div>
     <div class="stats" id="stats"></div>
   </header>
@@ -189,6 +197,7 @@ textarea{width:100%;resize:vertical;font-family:ui-monospace,Menlo,monospace;fon
     <button class="btn ghost" id="settingsBtn" title="Ayarlar">⚙︎ Ayarlar</button>
   </div>
 
+  <div class="banner" id="banner" hidden></div>
   <div id="list" class="grid"></div>
 </div>
 
@@ -248,7 +257,7 @@ textarea{width:100%;resize:vertical;font-family:ui-monospace,Menlo,monospace;fon
   <div class="sheet">
     <button class="close" data-close>×</button>
     <h2>Ayarlar</h2>
-    <p class="sub">Servis ölçülerini barınıza göre ayarlayın.</p>
+    <p class="sub" id="settingsScope">Servis ölçülerini barınıza göre ayarlayın.</p>
     <div class="row2">
       <div class="field"><label for="sSingle">Tek (ml)</label><input id="sSingle" type="number" min="10" max="200" step="5"></div>
       <div class="field"><label for="sDouble">Duble (ml)</label><input id="sDouble" type="number" min="20" max="400" step="5"></div>
@@ -443,18 +452,38 @@ function drawBottle(canvas, spec, frac){
 }
 
 /* ============================================================
-   VERİ
+   VERİ — ortak kayıt (artifact db) ya da bu cihaz (localStorage)
+   Ortak kayıtta:
+     bottles/<id>  {customer,note,catalogId,size,openedAt,closed,log:[...],by}
+     pours/<id>    {bottleId,t,ml,kind,by}   (açık şişelerin servisleri)
+     config/settings {single,double,lowDoubles}
+   Şişe bitince/kapatılınca servisler şişe belgesindeki log'a taşınır.
    ============================================================ */
 const KEY="sise-takip-v1";
-const defaults={settings:{single:40,double:80,lowDoubles:2},bottles:[]};
-let state = load();
-function load(){
-  try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&s.bottles) return {...defaults,...s,settings:{...defaults.settings,...s.settings}}; }catch(e){}
-  return structuredClone(defaults);
-}
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){} }
+const DEFAULT_SETTINGS={single:40,double:80,lowDoubles:2};
+const view={mode:"loading", settings:{...DEFAULT_SETTINGS}, bottles:new Map(), pours:new Map(), canWrite:true, me:null, offline:false};
+const S=()=>view.settings;
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
-const S=()=>state.settings;
+let lastT=0; const stamp=()=>{ lastT=Math.max(Date.now(),lastT+1); return lastT; };
+const $=s=>document.querySelector(s);
+const fmtDate=t=>new Date(t).toLocaleString("tr-TR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* türetilmiş şişe listesi (log + açık servisler) */
+let derivedCache=null;
+function invalidate(){ derivedCache=null; }
+function allBottles(){
+  if(derivedCache) return derivedCache;
+  const byBottle={};
+  view.pours.forEach(p=>{ (byBottle[p.bottleId]??=[]).push(p); });
+  derivedCache=[...view.bottles.values()].filter(b=>BY_ID[b.catalogId]).map(b=>({
+    ...b,
+    log:[...(b.log||[]), ...(byBottle[b.id]||[]).map(p=>({t:p.t,ml:p.ml,kind:p.kind,by:p.by||null}))].sort((x,y)=>x.t-y.t)
+  }));
+  return derivedCache;
+}
+const getBottle=id=>allBottles().find(b=>b.id===id);
+const cleanLog=log=>log.map(e=>({t:e.t,ml:e.ml,kind:e.kind,by:e.by||null}));
 
 function remaining(b){ return Math.max(0, b.size - b.log.reduce((a,e)=>a+e.ml,0)); }
 function isLow(b){ const r=remaining(b); return r>0 && r <= S().double*S().lowDoubles; }
@@ -467,17 +496,149 @@ function leftText(r){
   if(restD>=S().single) t += ` + <b>1</b> tek`;
   return `${t} ya da <b>${s}</b> tek daha`;
 }
-const fmtDate=t=>new Date(t).toLocaleString("tr-TR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- yerel depo (bu cihaz) ---------- */
+const LocalStore={
+  start(){
+    try{
+      const s=JSON.parse(localStorage.getItem(KEY));
+      if(s&&Array.isArray(s.bottles)){ view.settings={...DEFAULT_SETTINGS,...s.settings}; s.bottles.forEach(b=>view.bottles.set(b.id,b)); }
+    }catch(e){}
+    invalidate(); scheduleRender();
+  },
+  persist(){ try{ localStorage.setItem(KEY,JSON.stringify({settings:view.settings,bottles:[...view.bottles.values()]})); }catch(e){} invalidate(); scheduleRender(); },
+  async addBottle(b){ view.bottles.set(b.id,{...b}); this.persist(); },
+  async addPour(bottleId,e){ const b=view.bottles.get(bottleId); b.log=[...(b.log||[]),e]; this.persist(); },
+  async removeEntry(bottleId,t){ const b=view.bottles.get(bottleId); b.log=(b.log||[]).filter(e=>e.t!==t); this.persist(); },
+  async updateBottle(id,patch){ Object.assign(view.bottles.get(id),patch); this.persist(); },
+  async deleteBottle(id){ view.bottles.delete(id); this.persist(); },
+  async compact(){},
+  async saveSettings(s){ view.settings=s; this.persist(); },
+  async replaceAll(data){ view.bottles.clear(); data.bottles.forEach(b=>view.bottles.set(b.id,b)); view.settings={...DEFAULT_SETTINGS,...data.settings}; this.persist(); },
+};
+
+/* ---------- ortak kayıt (artifact db) ---------- */
+function SharedStore(db){
+  const bottlesC=db.collection("bottles"), poursC=db.collection("pours"), settingsD=db.doc("config/settings");
+  let gotBottles=false, gotPours=false;
+  const loadTimer=setTimeout(()=>{ if(!(gotBottles&&gotPours)){ view.offline=true; renderBanner(); } },10000);
+  const ready=()=>{ if(gotBottles&&gotPours){ clearTimeout(loadTimer); if(view.offline){ view.offline=false; renderBanner(); } } };
+  const onErr=e=>{ clearTimeout(loadTimer); view.offline=true; view.mode="shared"; renderBanner(); scheduleRender(); console.warn(e); };
+  async function guard(fn){
+    try{ return await fn(); }
+    catch(e){
+      if(e&&e.code==="invalid_argument"&&view.canWrite!==false){ view.canWrite=false; renderBanner(); scheduleRender(); toast("Bu kayıtlara servis girme yetkiniz yok."); }
+      else if(e&&e.code==="quota_exceeded") toast("Ortak kayıt dolu. Biten eski şişeleri silip tekrar deneyin.");
+      else toast("Kaydedilemedi. Bağlantıyı kontrol edip tekrar deneyin.");
+      throw e;
+    }
+  }
+  return {
+    start(){
+      bottlesC.onSnapshot(snap=>{
+        view.bottles=new Map(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));
+        if(!snap.metadata.fromCache){ gotBottles=true; ready(); }
+        if(view.mode!=="shared"){ view.mode="shared"; renderBanner(); } invalidate(); scheduleRender();
+      },onErr);
+      poursC.onSnapshot(snap=>{
+        view.pours=new Map(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));
+        if(!snap.metadata.fromCache){ gotPours=true; ready(); }
+        invalidate(); scheduleRender();
+      },onErr);
+      settingsD.onSnapshot(d=>{
+        view.settings={...DEFAULT_SETTINGS,...(d.exists?d.data():{})}; invalidate(); scheduleRender();
+      },()=>{});
+    },
+    addBottle:b=>guard(async()=>{
+      const {log,...rest}=b;
+      await bottlesC.doc(b.id).set({...rest,log:[]});
+      for(const e of log||[]) await poursC.doc().set({bottleId:b.id,...e});
+    }),
+    addPour:(bottleId,e)=>guard(()=>poursC.doc().set({bottleId,...e})),
+    removeEntry:(bottleId,t)=>guard(async()=>{
+      const p=[...view.pours.values()].find(p=>p.bottleId===bottleId&&p.t===t);
+      if(p) return poursC.doc(p.id).delete();
+      const b=view.bottles.get(bottleId); if(!b) return;
+      await bottlesC.doc(bottleId).update({log:(b.log||[]).filter(e=>e.t!==t)});
+    }),
+    updateBottle:(id,patch)=>guard(()=>bottlesC.doc(id).update(patch)),
+    deleteBottle:id=>guard(async()=>{
+      const ps=[...view.pours.values()].filter(p=>p.bottleId===id);
+      await Promise.all(ps.map(p=>poursC.doc(p.id).delete()));
+      await bottlesC.doc(id).delete();
+    }),
+    /* biten/kapanan şişenin servislerini şişe belgesine taşı */
+    compact:id=>guard(async()=>{
+      const b=getBottle(id); if(!b) return;
+      const ps=[...view.pours.values()].filter(p=>p.bottleId===id);
+      if(!ps.length) return;
+      await bottlesC.doc(id).update({log:cleanLog(b.log)});
+      await Promise.all(ps.map(p=>poursC.doc(p.id).delete()));
+    }),
+    saveSettings:s=>guard(()=>settingsD.set(s)),
+    replaceAll:data=>guard(async()=>{
+      const oldP=[...view.pours.keys()], oldB=[...view.bottles.keys()];
+      const chunk=async(arr,fn)=>{ for(let i=0;i<arr.length;i+=10) await Promise.all(arr.slice(i,i+10).map(fn)); };
+      await chunk(oldP,id=>poursC.doc(id).delete());
+      const keep=new Set(data.bottles.map(b=>b.id));
+      await chunk(oldB.filter(id=>!keep.has(id)),id=>bottlesC.doc(id).delete());
+      await chunk(data.bottles,b=>bottlesC.doc(b.id).set({...b,log:cleanLog(b.log||[])}));
+      await settingsD.set({...DEFAULT_SETTINGS,...data.settings});
+    }),
+  };
+}
+
+let store=LocalStore;
+let userApi=null;
+
+async function boot(){
+  if(!window.claude||typeof window.claude.use!=="function"){ view.mode="local"; renderBanner(); LocalStore.start(); return; }
+  render();
+  const [db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);
+  userApi=user;
+  if(!db){ view.mode="local-fallback"; renderBanner(); LocalStore.start(); return; }
+  if(user){
+    view.me=await user.id();
+    const w=await user.can("data.write");
+    if(w===false) view.canWrite=false;
+  }
+  store=SharedStore(db);
+  store.start();
+  renderBanner();
+}
+
+function renderBanner(){
+  const el=$("#banner"); let html="";
+  if(view.mode==="local") html="Kayıtlar yalnızca bu cihazda tutuluyor.";
+  else if(view.mode==="local-fallback") html="Ortak kayda şu an ulaşılamıyor; kayıtlar yalnızca bu cihazda tutuluyor.";
+  else if(view.offline) html="Ortak kayda ulaşılamıyor. Gösterilenler güncel olmayabilir; bağlantı gelince kendiliğinden yenilenir.";
+  else if(!view.canWrite) html="Bu sayfayı yalnızca görüntüleyebiliyorsunuz. Servis girmek için sayfa sahibinden düzenleme erişimi isteyin.";
+  el.innerHTML=html; el.hidden=!html;
+  el.classList.toggle("shared",view.mode==="shared");
+  $("#newBtn").hidden=!view.canWrite||view.mode==="loading";
+  $("#syncState").textContent = view.mode==="shared" ? (view.offline?"Bağlantı yok":"Ortak kayıt · canlı") : view.mode==="loading" ? "Bağlanıyor…" : "Bu cihaz";
+  $("#syncState").className = "sync "+(view.mode==="shared"&&!view.offline?"on":"");
+}
+
+/* render'ı animasyonla çakıştırmadan, karede bir kez yap */
+let animUntil=0, renderQueued=false;
+function scheduleRender(){
+  if(renderQueued) return; renderQueued=true;
+  const run=()=>{
+    const wait=animUntil-Date.now();
+    if(wait>0){ setTimeout(run,wait+20); return; }
+    renderQueued=false; render(); if(detailId) openDetail(detailId,true);
+  };
+  requestAnimationFrame(run);
+}
 
 /* ============================================================
    LİSTE
    ============================================================ */
 let tab="open", query="", sortBy="recent";
-const $=s=>document.querySelector(s);
 
 function render(){
-  const all = state.bottles;
+  const all = allBottles();
   const open = all.filter(b=>remaining(b)>0 && !b.closed);
   const low = open.filter(isLow);
   const done = all.filter(b=>remaining(b)<=0 || b.closed);
@@ -487,21 +648,28 @@ function render(){
     <div class="stat"><b>${low.length}</b><span>azalan</span></div>
     <div class="stat"><b>${(totalMl/1000).toFixed(1)}L</b><span>bardaki toplam</span></div>`;
 
+  const list=$("#list");
+  if(view.mode==="loading"){
+    list.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><canvas width="20" height="48" id="emptyCv"></canvas><h3>Kayıtlar yükleniyor</h3><div>Bardaki açık şişeler birazdan burada görünecek.</div></div>`;
+    drawBottle($("#emptyCv"), BY_ID["jw-black"], .6);
+    return;
+  }
   let items = tab==="open"?open : tab==="low"?low : done;
   if(query){ const q=query.toLocaleLowerCase("tr"); items=items.filter(b=>(b.customer+" "+BY_ID[b.catalogId].name+" "+(b.note||"")).toLocaleLowerCase("tr").includes(q)); }
   const last=b=>b.log.length?b.log[b.log.length-1].t:b.openedAt;
   items=[...items].sort(sortBy==="least"?(a,b)=>remaining(a)/a.size-remaining(b)/b.size : sortBy==="name"?(a,b)=>a.customer.localeCompare(b.customer,"tr") : (a,b)=>last(b)-last(a));
 
-  const list=$("#list");
   if(!items.length){
+    const local=view.mode!=="shared";
     list.innerHTML=`<div class="empty-state" style="grid-column:1/-1">
       <canvas width="20" height="48" id="emptyCv"></canvas>
-      <h3>${tab==="open"?"Henüz açık şişe yok":tab==="low"?"Azalan şişe yok":"Biten şişe yok"}</h3>
-      <div>${tab==="open"?"Sağ alttaki <b>＋ Şişe Aç</b> ile ilk şişeyi kaydedin.":""}</div>
-      ${tab==="open"&&!state.bottles.length?`<button class="btn neon" id="loadSamples" style="margin-top:14px">Örnek şişelerle dene</button>`:""}</div>`;
+      <h3>${query?"Aramayla eşleşen şişe yok":tab==="open"?"Henüz açık şişe yok":tab==="low"?"Azalan şişe yok":"Biten şişe yok"}</h3>
+      <div>${tab==="open"&&!query?(view.canWrite?"Müşteri şişe açtırınca sağ alttaki <b>＋ Şişe Aç</b> ile kaydedin. Kaydedilen şişeleri tüm personel görür.":"Açılan şişeler burada görünecek."):""}</div>
+      ${tab==="open"&&!query&&local&&!all.length?`<button class="btn neon" id="loadSamples" style="margin-top:14px">Örnek şişelerle dene</button>`:""}</div>`;
     drawBottle($("#emptyCv"), BY_ID["jw-black"], tab==="done"?0:.85);
     return;
   }
+  const w=view.canWrite;
   list.innerHTML = items.map(b=>{
     const spec=BY_ID[b.catalogId], r=remaining(b), low=isLow(b), empty=r<=0||b.closed;
     const pips = Math.ceil(b.size/S().double);
@@ -520,7 +688,7 @@ function render(){
         </div>
       </div>
       ${pipHtml}
-      ${empty?`<div class="actions" style="grid-template-columns:1fr"><button class="btn ghost" data-open="${b.id}">Geçmişi gör</button></div>`:
+      ${empty||!w?`<div class="actions" style="grid-template-columns:1fr"><button class="btn ghost" data-open="${b.id}">${empty?"Geçmişi gör":"Detay"}</button></div>`:
       `<div class="actions">
         <button class="btn" data-pour="single" data-id="${b.id}">Tek · ${S().single}ml</button>
         <button class="btn primary" data-pour="double" data-id="${b.id}">Duble · ${S().double}ml</button>
@@ -546,24 +714,23 @@ function animateLevel(canvases, spec, from, to){
   requestAnimationFrame(step);
 }
 async function pour(id, kind, customMl){
-  const b=state.bottles.find(x=>x.id===id); if(!b) return;
+  if(!view.canWrite) return;
+  const b=getBottle(id); if(!b) return;
   const before=remaining(b);
   let ml = kind==="single"?S().single : kind==="double"?S().double : Math.round(customMl);
-  if(!(ml>0)) return;
-  if(before<=0) return;
+  if(!(ml>0) || before<=0 || b.closed) return;
   if(ml>before){
     if(!await ask({title:"Şişede yeterli yok",text:`Şişede sadece ${before} ml kaldı. Kalanın hepsi servis edilsin mi?`,ok:`${before} ml servis et`})) return;
     ml=before;
   }
-  b.log.push({t:Date.now(), ml, kind});
-  save();
-  const after=remaining(b), spec=BY_ID[b.catalogId];
+  const after=before-ml, spec=BY_ID[b.catalogId], entry={t:stamp(),ml,kind,by:view.me};
   const cvs=[...document.querySelectorAll(`[data-cv="${id}"]`), ...(detailId===id?[$("#detailCv")]:[])].filter(Boolean);
-  // önce animasyon, sonra liste yenile
+  animUntil=Date.now()+950;
   animateLevel(cvs, spec, before/b.size, after/b.size);
-  setTimeout(()=>{ render(); if(detailId===id) openDetail(id,true); }, 950);
+  try{ await store.addPour(id,entry); }catch(e){ animUntil=0; scheduleRender(); return; }
+  if(after<=0) store.compact(id).catch(()=>{});
   const label = kind==="single"?"Tek":kind==="double"?"Duble":"Servis";
-  toast(`${esc(b.customer)} · ${esc(spec.name)}: ${label} ${ml} ml → kalan ${after} ml`, ()=>{ b.log.pop(); save(); render(); if(detailId===id) openDetail(id,true); });
+  toast(`${esc(b.customer)} · ${esc(spec.name)}: ${label} ${ml} ml → kalan ${after} ml`, ()=>store.removeEntry(id,entry.t).catch(()=>{}));
 }
 
 let toastTimer;
@@ -580,10 +747,12 @@ function toast(html, undo){
    ============================================================ */
 let detailId=null;
 function openDetail(id, keepOpen){
-  const b=state.bottles.find(x=>x.id===id); if(!b) return;
+  const b=getBottle(id);
+  if(!b){ if(keepOpen&&detailId===id){ closeModals(); toast("Bu şişe kaydı silindi."); } return; }
   detailId=id;
-  const spec=BY_ID[b.catalogId], r=remaining(b), empty=r<=0||b.closed;
+  const spec=BY_ID[b.catalogId], r=remaining(b), empty=r<=0||b.closed, w=view.canWrite;
   const kinds={single:"Tek",double:"Duble",custom:"Özel"};
+  const customVal = keepOpen && $("#customMl") ? $("#customMl").value : "";
   $("#detailSheet").innerHTML=`
     <button class="close" data-close>×</button>
     <div class="detail-top">
@@ -596,34 +765,43 @@ function openDetail(id, keepOpen){
         <div class="left">${leftText(r)}</div>
       </div>
     </div>
-    ${empty?"":`
+    ${empty||!w?"":`
     <div class="btnrow">
       <button class="btn" data-pour="single" data-id="${b.id}">Tek · ${S().single}ml</button>
       <button class="btn primary" data-pour="double" data-id="${b.id}">Duble · ${S().double}ml</button>
     </div>
     <div class="custom">
-      <input id="customMl" type="number" min="5" max="${r}" step="5" placeholder="ml">
+      <input id="customMl" type="number" min="5" max="${r}" step="5" placeholder="ml" value="${esc(customVal)}">
       <button class="btn" id="customBtn">Özel miktar düş</button>
     </div>`}
     <h3 style="font-family:'Playfair Display',serif;font-weight:500;font-style:italic;margin:16px 0 6px">Servis geçmişi</h3>
     <ul class="log">
-      ${b.log.length?[...b.log].map((e,i)=>({e,i})).reverse().map(({e})=>`<li><span>${kinds[e.kind]||"Servis"} · <b>${e.ml} ml</b></span><span>${fmtDate(e.t)}</span></li>`).join(""):`<li><span>Henüz servis yok</span><span></span></li>`}
-      <li><span>Şişe açıldı · ${b.size} ml</span><span>${fmtDate(b.openedAt)}</span></li>
+      ${b.log.length?[...b.log].reverse().map(e=>`<li><span>${kinds[e.kind]||"Servis"} · <b>${e.ml} ml</b>${e.by?` <span class="by" data-uid="${esc(e.by)}"></span>`:""}</span><span>${fmtDate(e.t)}</span></li>`).join(""):`<li><span>Henüz servis yok</span><span></span></li>`}
+      <li><span>Şişe açıldı · ${b.size} ml${b.by?` <span class="by" data-uid="${esc(b.by)}"></span>`:""}</span><span>${fmtDate(b.openedAt)}</span></li>
     </ul>
-    <div class="btnrow" style="margin-top:16px">
+    ${w?`<div class="btnrow" style="margin-top:16px">
       ${b.log.length?`<button class="btn" id="undoLast">Son servisi geri al</button>`:""}
       ${b.closed?`<button class="btn" id="reopenBtn">Yeniden aç</button>`:(r>0?`<button class="btn" id="closeBtn">Şişeyi kapat (bitti say)</button>`:"")}
       <button class="btn" id="renameBtn">Müşteriyi düzenle</button>
       <button class="btn danger" id="delBtn">Sil</button>
-    </div>`;
+    </div>`:""}`;
   drawBottle($("#detailCv"), spec, r/b.size);
+  fillNames();
   if(!keepOpen) openModal("#detailModal");
-  const cb=$("#customBtn"); if(cb) cb.onclick=()=>{ const v=+$("#customMl").value; if(v>0) pour(id,"custom",v); };
-  const ul=$("#undoLast"); if(ul) ul.onclick=()=>{ b.log.pop(); save(); render(); openDetail(id,true); };
-  const cl=$("#closeBtn"); if(cl) cl.onclick=async()=>{ if(await ask({title:"Şişeyi kapat",text:`Şişede ${r} ml görünüyor. Bitti olarak işaretlensin mi?`,ok:"Bitti say"})){ b.closed=true; save(); render(); openDetail(id,true);} };
-  const ro=$("#reopenBtn"); if(ro) ro.onclick=()=>{ b.closed=false; save(); render(); openDetail(id,true); };
-  $("#renameBtn").onclick=async()=>{ const v=await ask({title:"Müşteriyi düzenle",ok:"Kaydet",fields:[{label:"Müşteri adı",value:b.customer},{label:"Not",value:b.note||""}]}); if(v&&v[0].trim()){ b.customer=v[0].trim(); b.note=v[1].trim(); save(); render(); openDetail(id,true);} };
-  $("#delBtn").onclick=async()=>{ if(await ask({title:"Kaydı sil",text:`${b.customer} – ${spec.name} kaydı ve servis geçmişi silinecek.`,ok:"Sil",danger:true})){ state.bottles=state.bottles.filter(x=>x.id!==id); save(); closeModals(); render(); } };
+  if(!w) return;
+  const cb=$("#customBtn"); if(cb) cb.onclick=()=>{ const v=+$("#customMl").value; if(v>0){ $("#customMl").value=""; pour(id,"custom",v);} };
+  const ul=$("#undoLast"); if(ul) ul.onclick=()=>{ const lastE=b.log[b.log.length-1]; store.removeEntry(id,lastE.t).catch(()=>{}); };
+  const cl=$("#closeBtn"); if(cl) cl.onclick=async()=>{ if(await ask({title:"Şişeyi kapat",text:`Şişede ${r} ml görünüyor. Bitti olarak işaretlensin mi?`,ok:"Bitti say"})){ await store.updateBottle(id,{closed:true}).catch(()=>{}); store.compact(id).catch(()=>{}); } };
+  const ro=$("#reopenBtn"); if(ro) ro.onclick=()=>store.updateBottle(id,{closed:false}).catch(()=>{});
+  $("#renameBtn").onclick=async()=>{ const v=await ask({title:"Müşteriyi düzenle",ok:"Kaydet",fields:[{label:"Müşteri adı",value:b.customer},{label:"Not",value:b.note||""}]}); if(v&&v[0].trim()) store.updateBottle(id,{customer:v[0].trim(),note:v[1].trim()}).catch(()=>{}); };
+  $("#delBtn").onclick=async()=>{ if(await ask({title:"Kaydı sil",text:`${b.customer} – ${spec.name} kaydı ve servis geçmişi${view.mode==="shared"?" tüm personel için":""} silinecek.`,ok:"Sil",danger:true})){ closeModals(); store.deleteBottle(id).catch(()=>{}); } };
+}
+/* servisi kimin girdiği (yalnızca kimlik saklanır, ad her seferinde çözülür) */
+async function fillNames(){
+  const els=[...document.querySelectorAll("#detailSheet .by[data-uid]")];
+  if(!els.length||!userApi) return;
+  const ps=await userApi.profiles([...new Set(els.map(e=>e.dataset.uid))]);
+  els.forEach(e=>{ const p=ps[e.dataset.uid]; const n=p&&(p.isMe?"siz":p.name); e.textContent=n?`· ${n}`:""; });
 }
 
 /* ============================================================
@@ -648,20 +826,27 @@ function updatePreview(){
   drawBottle($("#newPreview"), spec, r/newSize);
 }
 function openNew(){
+  if(!view.canWrite) return;
   $("#fCustomer").value=""; $("#fNote").value=""; newSize=700; renderSizes();
   $("#fFirst").options[1].text=`Tek (${S().single} ml)`; $("#fFirst").options[2].text=`Duble (${S().double} ml)`;
   updatePreview(); openModal("#newModal"); setTimeout(()=>$("#fCustomer").focus(),50);
 }
-function create(){
+let creating=false;
+async function create(){
+  if(creating) return;
   const customer=$("#fCustomer").value.trim();
   if(!customer){ $("#fCustomer").focus(); $("#fCustomer").style.borderColor="var(--danger)"; return; }
   $("#fCustomer").style.borderColor="";
-  const first=$("#fFirst").value, now=Date.now();
-  const b={id:uid(),customer,note:$("#fNote").value.trim(),catalogId:$("#fBottle").value,size:newSize,openedAt:now,log:[],closed:false};
-  if(first!=="0") b.log.push({t:now+1,ml:first==="single"?S().single:S().double,kind:first});
-  state.bottles.push(b); save();
-  closeModals(); tab="open"; syncTabs(); render();
-  toast(`${esc(customer)} için ${esc(BY_ID[b.catalogId].name)} açıldı · kalan ${remaining(b)} ml`);
+  const first=$("#fFirst").value, now=stamp();
+  const b={id:uid(),customer,note:$("#fNote").value.trim(),catalogId:$("#fBottle").value,size:newSize,openedAt:now,closed:false,by:view.me,log:[]};
+  if(first!=="0") b.log.push({t:stamp(),ml:first==="single"?S().single:S().double,kind:first,by:view.me});
+  creating=true; $("#createBtn").disabled=true;
+  try{
+    await store.addBottle(b);
+    closeModals(); tab="open"; syncTabs(); scheduleRender();
+    toast(`${esc(customer)} için ${esc(BY_ID[b.catalogId].name)} açıldı · kalan ${b.size-(b.log[0]?.ml||0)} ml`);
+  }catch(e){}
+  creating=false; $("#createBtn").disabled=false;
 }
 
 /* ============================================================
@@ -690,26 +875,34 @@ $("#fFirst").addEventListener("change",updatePreview);
 $("#createBtn").onclick=create;
 $("#fCustomer").addEventListener("keydown",e=>{ if(e.key==="Enter") create(); });
 
-$("#settingsBtn").onclick=()=>{ $("#sSingle").value=S().single; $("#sDouble").value=S().double; $("#sLow").value=S().lowDoubles; openModal("#settingsModal"); };
-$("#saveSettings").onclick=()=>{
+$("#settingsBtn").onclick=()=>{
+  $("#sSingle").value=S().single; $("#sDouble").value=S().double; $("#sLow").value=S().lowDoubles; $("#setErr").hidden=true;
+  ["#sSingle","#sDouble","#sLow","#saveSettings","#importText","#importFileLbl"].forEach(s=>{ const el=$(s); if(el) el.toggleAttribute("disabled",!view.canWrite); });
+  $("#importFile").disabled=!view.canWrite;
+  $("#settingsScope").textContent = view.mode==="shared" ? "Ölçüler ve yedek tüm personel için geçerlidir." : "Servis ölçülerini barınıza göre ayarlayın.";
+  openModal("#settingsModal");
+};
+$("#saveSettings").onclick=async()=>{
   const s=+$("#sSingle").value, d=+$("#sDouble").value, l=+$("#sLow").value;
   const er=$("#setErr");
   if(!(s>0&&d>=s)){ er.textContent="Duble, tekten küçük olamaz. Değerleri kontrol edin."; er.hidden=false; return; }
   er.hidden=true;
-  state.settings={single:s,double:d,lowDoubles:Math.max(0,l|0)}; save(); closeModals(); render(); toast("Ayarlar kaydedildi");
+  try{ await store.saveSettings({single:s,double:d,lowDoubles:Math.max(0,l|0)}); closeModals(); toast("Ayarlar kaydedildi"); }catch(e){}
 };
+function exportData(){ return JSON.stringify({settings:view.settings,bottles:allBottles().map(b=>({...b,log:cleanLog(b.log)}))}); }
 $("#exportBtn").onclick=async()=>{
-  const ta=$("#backupText"); ta.value=JSON.stringify(state);
+  const ta=$("#backupText"); ta.value=exportData();
   try{ await navigator.clipboard.writeText(ta.value); toast("Yedek panoya kopyalandı"); }
   catch(e){ ta.focus(); ta.select(); toast("Metin seçildi, kopyalayıp saklayın"); }
 };
 async function importJson(txt){
+  if(!view.canWrite) return;
   let data;
   try{ data=JSON.parse(txt); if(!Array.isArray(data.bottles)) throw 0; }
   catch(e){ toast("Yedek okunamadı. Metnin tamamını yapıştırdığınızdan emin olun."); return; }
-  data.bottles=data.bottles.filter(b=>BY_ID[b.catalogId]);
-  if(!await ask({title:"Yedeği yükle",text:`${data.bottles.length} şişe yüklenecek ve bu cihazdaki mevcut kayıtların yerini alacak.`,ok:"Yükle"})) return;
-  state={...defaults,...data,settings:{...defaults.settings,...data.settings}}; save(); closeModals(); render(); toast("Yedek yüklendi");
+  data.bottles=data.bottles.filter(b=>b&&b.id&&BY_ID[b.catalogId]&&b.size>0);
+  if(!await ask({title:"Yedeği yükle",text:`${data.bottles.length} şişe yüklenecek ve ${view.mode==="shared"?"tüm personelin gördüğü":"bu cihazdaki"} mevcut kayıtların yerini alacak.`,ok:"Yükle"})) return;
+  try{ await store.replaceAll(data); closeModals(); toast("Yedek yüklendi"); }catch(e){}
 }
 $("#importText").onclick=()=>{ const v=$("#backupText").value.trim(); if(v) importJson(v); else $("#backupText").focus(); };
 $("#importFile").onchange=async e=>{ const f=e.target.files[0]; if(f) await importJson(await f.text()); e.target.value=""; };
@@ -733,22 +926,23 @@ $("#askOk").onclick=()=>{ const n=document.querySelectorAll("#askFields input");
 $("#askCancel").onclick=()=>askDone(false);
 $("#askFields").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#askOk").click(); });
 
-/* örnek veriler */
-function loadSamples(){
+/* örnek veriler (yalnızca bu-cihaz modunda) */
+async function loadSamples(){
+  if(view.mode==="shared") return;
   const now=Date.now(), H=3600000, d=S().double, t=S().single;
-  const mk=(customer,catalogId,pours,daysAgo,note="Örnek")=>({id:uid(),customer,note,catalogId,size:700,openedAt:now-daysAgo*24*H,closed:false,
-    log:pours.map((k,i)=>({t:now-daysAgo*24*H+(i+1)*H,ml:k==="d"?d:t,kind:k==="d"?"double":"single"}))});
-  state.bottles.push(
+  const mk=(customer,catalogId,pours,daysAgo)=>({id:uid(),customer,note:"Örnek",catalogId,size:700,openedAt:now-daysAgo*24*H,closed:false,by:null,
+    log:pours.map((k,i)=>({t:now-daysAgo*24*H+(i+1)*H,ml:k==="d"?d:t,kind:k==="d"?"double":"single",by:null}))});
+  for(const b of [
     mk("Örnek · Ahmet","jw-black",["d","d","t"],1),
     mk("Örnek · Selin","jack",["d","d","d","d","d","d"],5),
     mk("Örnek · Mert","ardbeg-10",["d"],2),
     mk("Örnek · Zeynep","hendricks",["d","d","d","d","d","d","t"],9),
     mk("Örnek · Can","martell-xo",["t","t"],3),
-    mk("Örnek · Deniz","casa-repo",["d","d","d"],4));
-  save(); render(); toast("Örnek şişeler eklendi. Silmek için detaydan “Sil”i kullanın.");
+    mk("Örnek · Deniz","casa-repo",["d","d","d"],4)]) await store.addBottle(b);
+  toast("Örnek şişeler eklendi. Silmek için detaydan “Sil”i kullanın.");
 }
 
-fillCatalogSelect(); renderSizes(); render();
+fillCatalogSelect(); renderSizes(); renderBanner(); boot();
 </script>
 </body>
 </html>
