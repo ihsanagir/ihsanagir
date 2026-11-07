@@ -4,12 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Şişe Takip</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Barda açılan şişelerin kalan miktarını pixel şişelerle takip eden uygulama.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500;1,600&family=DM+Sans:wght@400;500;700&family=Silkscreen&display=swap" rel="stylesheet">
 <style>
 :root{
+  color-scheme:dark;
   --bg:#071416;
   --bg2:#0b1f22;
   --panel:#0f2a2d;
@@ -46,7 +48,7 @@ body::before{
   content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;z-index:0;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%23bfe3d6' stroke-width='1.2'%3E%3Cpath d='M20 200 C60 120 120 80 200 20'/%3E%3Cpath d='M60 140 C40 120 30 100 34 80 C54 90 66 112 60 140Z'/%3E%3Cpath d='M100 100 C80 80 74 58 80 40 C98 52 108 74 100 100Z'/%3E%3Cpath d='M80 122 C104 118 124 126 140 140 C118 150 96 144 80 122Z'/%3E%3Cpath d='M126 76 C150 72 170 80 184 94 C162 104 140 98 126 76Z'/%3E%3C/g%3E%3C/svg%3E");
 }
-.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 16px 120px}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding-block:20px 120px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
 .brand h1{
   font-family:"Playfair Display",serif;font-weight:600;font-size:clamp(30px,6vw,44px);margin:0;line-height:1;
@@ -120,7 +122,7 @@ canvas.bottle.pour{animation:pour .9s ease-in-out}
 .empty-state canvas{image-rendering:pixelated;width:60px;height:144px;opacity:.6}
 .empty-state h3{font-family:"Playfair Display",serif;color:#fff;font-weight:500;font-style:italic;font-size:24px;margin:10px 0 6px}
 
-.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:14px 18px;font-size:15px;border-radius:14px}
+.fab{position:fixed;right:calc(16px + env(safe-area-inset-right, 0px));bottom:calc(16px + env(safe-area-inset-bottom));z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:14px 18px;font-size:15px;border-radius:14px}
 
 /* modal */
 .modal{position:fixed;inset:0;background:rgba(3,10,11,.72);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:20;padding:0}
@@ -151,6 +153,11 @@ canvas.bottle.pour{animation:pour .9s ease-in-out}
 .custom input{width:110px}
 .note{font-size:12px;color:var(--muted);line-height:1.5}
 
+#askModal{z-index:30}
+.err{color:var(--danger);font-size:13px;margin:-4px 0 10px}
+textarea{width:100%;resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.btn:focus-visible,.chip:focus-visible,.seg button:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){canvas.bottle.pour{animation:none}.toast{transition:none}}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;
   background:#0f2a2d;border:1px solid var(--neon);color:#fff;padding:10px 14px;border-radius:12px;font-size:14px;transition:.25s;max-width:calc(100% - 32px);box-shadow:0 0 20px rgba(243,188,214,.2)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -250,13 +257,32 @@ canvas.bottle.pour{animation:pour .9s ease-in-out}
       <label for="sLow">“Azalıyor” uyarısı: kalan duble sayısı ≤</label>
       <input id="sLow" type="number" min="0" max="10" step="1">
     </div>
-    <button class="btn primary" id="saveSettings" style="width:100%;margin-bottom:16px">Kaydet</button>
-    <div class="btnrow">
-      <button class="btn" id="exportBtn">Yedeği indir (JSON)</button>
-      <label class="btn" for="importFile" style="display:inline-block">Yedekten yükle</label>
-      <input id="importFile" type="file" accept="application/json" hidden>
+    <p class="err" id="setErr" hidden></p>
+    <button class="btn primary" id="saveSettings" style="width:100%;margin-bottom:18px">Kaydet</button>
+    <div class="field">
+      <label for="backupText">Yedek (JSON)</label>
+      <textarea id="backupText" rows="4" placeholder="Yedek metni burada görünür ya da başka cihazdan aldığınız yedeği buraya yapıştırın"></textarea>
     </div>
-    <p class="note">Veriler bu cihazın tarayıcısında saklanır. Başka bir cihaza taşımak için yedeği indirip orada yükleyin.</p>
+    <div class="btnrow">
+      <button class="btn" id="exportBtn">Yedeği oluştur ve kopyala</button>
+      <button class="btn" id="importText">Yapıştırılan yedeği yükle</button>
+      <label class="btn" for="importFile" style="display:inline-block">Dosyadan yükle</label>
+      <input id="importFile" type="file" accept="application/json,.json" hidden>
+    </div>
+    <p class="note">Veriler bu cihazın tarayıcısında saklanır. Başka bir cihaza taşımak için yedeği kopyalayıp diğer cihazda buraya yapıştırın.</p>
+  </div>
+</div>
+
+<!-- Onay penceresi -->
+<div class="modal" id="askModal">
+  <div class="sheet" style="max-width:440px">
+    <h2 id="askTitle" style="font-size:22px"></h2>
+    <p class="sub" id="askText"></p>
+    <div id="askFields"></div>
+    <div class="btnrow" style="justify-content:flex-end;margin-bottom:0">
+      <button class="btn ghost" id="askCancel">Vazgeç</button>
+      <button class="btn primary" id="askOk">Tamam</button>
+    </div>
   </div>
 </div>
 
@@ -471,7 +497,8 @@ function render(){
     list.innerHTML=`<div class="empty-state" style="grid-column:1/-1">
       <canvas width="20" height="48" id="emptyCv"></canvas>
       <h3>${tab==="open"?"Henüz açık şişe yok":tab==="low"?"Azalan şişe yok":"Biten şişe yok"}</h3>
-      <div>${tab==="open"?"Sağ alttaki <b>＋ Şişe Aç</b> ile ilk şişeyi kaydedin.":""}</div></div>`;
+      <div>${tab==="open"?"Sağ alttaki <b>＋ Şişe Aç</b> ile ilk şişeyi kaydedin.":""}</div>
+      ${tab==="open"&&!state.bottles.length?`<button class="btn neon" id="loadSamples" style="margin-top:14px">Örnek şişelerle dene</button>`:""}</div>`;
     drawBottle($("#emptyCv"), BY_ID["jw-black"], tab==="done"?0:.85);
     return;
   }
@@ -518,14 +545,14 @@ function animateLevel(canvases, spec, from, to){
   };
   requestAnimationFrame(step);
 }
-function pour(id, kind, customMl){
+async function pour(id, kind, customMl){
   const b=state.bottles.find(x=>x.id===id); if(!b) return;
   const before=remaining(b);
   let ml = kind==="single"?S().single : kind==="double"?S().double : Math.round(customMl);
   if(!(ml>0)) return;
   if(before<=0) return;
   if(ml>before){
-    if(!confirm(`Şişede sadece ${before} ml kaldı. Kalanın hepsi servis edilsin mi?`)) return;
+    if(!await ask({title:"Şişede yeterli yok",text:`Şişede sadece ${before} ml kaldı. Kalanın hepsi servis edilsin mi?`,ok:`${before} ml servis et`})) return;
     ml=before;
   }
   b.log.push({t:Date.now(), ml, kind});
@@ -593,10 +620,10 @@ function openDetail(id, keepOpen){
   if(!keepOpen) openModal("#detailModal");
   const cb=$("#customBtn"); if(cb) cb.onclick=()=>{ const v=+$("#customMl").value; if(v>0) pour(id,"custom",v); };
   const ul=$("#undoLast"); if(ul) ul.onclick=()=>{ b.log.pop(); save(); render(); openDetail(id,true); };
-  const cl=$("#closeBtn"); if(cl) cl.onclick=()=>{ if(confirm("Şişe bitti olarak işaretlensin mi?")){ b.closed=true; save(); render(); openDetail(id,true);} };
+  const cl=$("#closeBtn"); if(cl) cl.onclick=async()=>{ if(await ask({title:"Şişeyi kapat",text:`Şişede ${r} ml görünüyor. Bitti olarak işaretlensin mi?`,ok:"Bitti say"})){ b.closed=true; save(); render(); openDetail(id,true);} };
   const ro=$("#reopenBtn"); if(ro) ro.onclick=()=>{ b.closed=false; save(); render(); openDetail(id,true); };
-  $("#renameBtn").onclick=()=>{ const n=prompt("Müşteri adı",b.customer); if(n&&n.trim()){ b.customer=n.trim(); const no=prompt("Not",b.note||""); if(no!==null) b.note=no.trim(); save(); render(); openDetail(id,true);} };
-  $("#delBtn").onclick=()=>{ if(confirm(`${b.customer} – ${spec.name} kaydı silinsin mi?`)){ state.bottles=state.bottles.filter(x=>x.id!==id); save(); closeModals(); render(); } };
+  $("#renameBtn").onclick=async()=>{ const v=await ask({title:"Müşteriyi düzenle",ok:"Kaydet",fields:[{label:"Müşteri adı",value:b.customer},{label:"Not",value:b.note||""}]}); if(v&&v[0].trim()){ b.customer=v[0].trim(); b.note=v[1].trim(); save(); render(); openDetail(id,true);} };
+  $("#delBtn").onclick=async()=>{ if(await ask({title:"Kaydı sil",text:`${b.customer} – ${spec.name} kaydı ve servis geçmişi silinecek.`,ok:"Sil",danger:true})){ state.bottles=state.bottles.filter(x=>x.id!==id); save(); closeModals(); render(); } };
 }
 
 /* ============================================================
@@ -641,18 +668,20 @@ function create(){
    MODAL / OLAYLAR
    ============================================================ */
 function openModal(sel){ $(sel).classList.add("open"); document.body.style.overflow="hidden"; }
-function closeModals(){ document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open")); document.body.style.overflow=""; detailId=null; }
+function closeModals(){ document.querySelectorAll(".modal.open:not(#askModal)").forEach(m=>m.classList.remove("open")); document.body.style.overflow=""; detailId=null; }
 function syncTabs(){ document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab)); }
 
 document.addEventListener("click",e=>{
   const t=e.target;
+  if(t.id==="askModal"){ askDone(false); return; }
+  if(t.closest("#loadSamples")){ loadSamples(); return; }
   const p=t.closest("[data-pour]"); if(p){ pour(p.dataset.id,p.dataset.pour); return; }
   const o=t.closest("[data-open]"); if(o){ openDetail(o.dataset.open); return; }
   if(t.closest("[data-close]") || t.classList.contains("modal")){ closeModals(); return; }
   const sz=t.closest("[data-size]"); if(sz){ newSize=+sz.dataset.size; renderSizes(); updatePreview(); return; }
   const tb=t.closest("#tabs button"); if(tb){ tab=tb.dataset.tab; syncTabs(); render(); }
 });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModals(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ if(askResolve) askDone(false); else closeModals(); } });
 $("#q").addEventListener("input",e=>{ query=e.target.value.trim(); render(); });
 $("#sort").addEventListener("change",e=>{ sortBy=e.target.value; render(); });
 $("#newBtn").onclick=openNew;
@@ -664,25 +693,60 @@ $("#fCustomer").addEventListener("keydown",e=>{ if(e.key==="Enter") create(); })
 $("#settingsBtn").onclick=()=>{ $("#sSingle").value=S().single; $("#sDouble").value=S().double; $("#sLow").value=S().lowDoubles; openModal("#settingsModal"); };
 $("#saveSettings").onclick=()=>{
   const s=+$("#sSingle").value, d=+$("#sDouble").value, l=+$("#sLow").value;
-  if(!(s>0&&d>=s)){ alert("Duble, tekten küçük olamaz."); return; }
+  const er=$("#setErr");
+  if(!(s>0&&d>=s)){ er.textContent="Duble, tekten küçük olamaz. Değerleri kontrol edin."; er.hidden=false; return; }
+  er.hidden=true;
   state.settings={single:s,double:d,lowDoubles:Math.max(0,l|0)}; save(); closeModals(); render(); toast("Ayarlar kaydedildi");
 };
-$("#exportBtn").onclick=()=>{
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`sise-takip-${new Date().toISOString().slice(0,10)}.json`; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+$("#exportBtn").onclick=async()=>{
+  const ta=$("#backupText"); ta.value=JSON.stringify(state);
+  try{ await navigator.clipboard.writeText(ta.value); toast("Yedek panoya kopyalandı"); }
+  catch(e){ ta.focus(); ta.select(); toast("Metin seçildi, kopyalayıp saklayın"); }
 };
-$("#importFile").onchange=async e=>{
-  const f=e.target.files[0]; if(!f) return;
-  try{
-    const data=JSON.parse(await f.text());
-    if(!Array.isArray(data.bottles)) throw 0;
-    data.bottles=data.bottles.filter(b=>BY_ID[b.catalogId]);
-    if(!confirm(`${data.bottles.length} şişe yüklenecek; mevcut veriler değiştirilecek. Devam?`)) return;
-    state={...defaults,...data,settings:{...defaults.settings,...data.settings}}; save(); closeModals(); render(); toast("Yedek yüklendi");
-  }catch(err){ alert("Dosya okunamadı."); }
-  e.target.value="";
-};
+async function importJson(txt){
+  let data;
+  try{ data=JSON.parse(txt); if(!Array.isArray(data.bottles)) throw 0; }
+  catch(e){ toast("Yedek okunamadı. Metnin tamamını yapıştırdığınızdan emin olun."); return; }
+  data.bottles=data.bottles.filter(b=>BY_ID[b.catalogId]);
+  if(!await ask({title:"Yedeği yükle",text:`${data.bottles.length} şişe yüklenecek ve bu cihazdaki mevcut kayıtların yerini alacak.`,ok:"Yükle"})) return;
+  state={...defaults,...data,settings:{...defaults.settings,...data.settings}}; save(); closeModals(); render(); toast("Yedek yüklendi");
+}
+$("#importText").onclick=()=>{ const v=$("#backupText").value.trim(); if(v) importJson(v); else $("#backupText").focus(); };
+$("#importFile").onchange=async e=>{ const f=e.target.files[0]; if(f) await importJson(await f.text()); e.target.value=""; };
+
+/* sayfa içi onay penceresi */
+let askResolve=null;
+function ask({title,text="",ok="Tamam",danger=false,fields=null}){
+  return new Promise(res=>{
+    if(askResolve) askResolve(false);
+    askResolve=res;
+    $("#askTitle").textContent=title; $("#askText").textContent=text; $("#askText").hidden=!text;
+    $("#askFields").innerHTML=(fields||[]).map((f,i)=>`<div class="field"><label for="askF${i}">${esc(f.label)}</label><input id="askF${i}" value="${esc(f.value||"")}" autocomplete="off"></div>`).join("");
+    const okB=$("#askOk"); okB.textContent=ok; okB.className="btn "+(danger?"danger":"primary");
+    $("#toast").classList.remove("show");
+    $("#askModal").classList.add("open");
+    setTimeout(()=>{ (fields?$("#askF0"):okB).focus(); },30);
+  });
+}
+function askDone(v){ $("#askModal").classList.remove("open"); const r=askResolve; askResolve=null; if(r) r(v); }
+$("#askOk").onclick=()=>{ const n=document.querySelectorAll("#askFields input"); askDone(n.length?[...n].map(i=>i.value):true); };
+$("#askCancel").onclick=()=>askDone(false);
+$("#askFields").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#askOk").click(); });
+
+/* örnek veriler */
+function loadSamples(){
+  const now=Date.now(), H=3600000, d=S().double, t=S().single;
+  const mk=(customer,catalogId,pours,daysAgo,note="Örnek")=>({id:uid(),customer,note,catalogId,size:700,openedAt:now-daysAgo*24*H,closed:false,
+    log:pours.map((k,i)=>({t:now-daysAgo*24*H+(i+1)*H,ml:k==="d"?d:t,kind:k==="d"?"double":"single"}))});
+  state.bottles.push(
+    mk("Örnek · Ahmet","jw-black",["d","d","t"],1),
+    mk("Örnek · Selin","jack",["d","d","d","d","d","d"],5),
+    mk("Örnek · Mert","ardbeg-10",["d"],2),
+    mk("Örnek · Zeynep","hendricks",["d","d","d","d","d","d","t"],9),
+    mk("Örnek · Can","martell-xo",["t","t"],3),
+    mk("Örnek · Deniz","casa-repo",["d","d","d"],4));
+  save(); render(); toast("Örnek şişeler eklendi. Silmek için detaydan “Sil”i kullanın.");
+}
 
 fillCatalogSelect(); renderSizes(); render();
 </script>
