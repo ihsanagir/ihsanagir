@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Şişe Takip</title>
+<meta name="description" content="Barda açılan şişelerin kalan miktarını pixel şişelerle takip eden uygulama.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500;1,600&family=DM+Sans:wght@400;500;700&family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#071416;
+  --bg2:#0b1f22;
+  --panel:#0f2a2d;
+  --panel2:#13343a;
+  --line:#1f4a4f;
+  --teal:#1d5c5a;
+  --green:#2f6f5c;
+  --blue:#1f4f66;
+  --text:#e7efe9;
+  --muted:#93aca8;
+  --neon:#f3bcd6;
+  --neon-glow:rgba(243,188,214,.45);
+  --gold:#d8a64a;
+  --warn:#e8a04a;
+  --danger:#e06a6a;
+  --ok:#6fcf97;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    radial-gradient(1200px 700px at 85% -10%, rgba(47,111,92,.35), transparent 60%),
+    radial-gradient(900px 600px at -10% 30%, rgba(31,79,102,.35), transparent 60%),
+    radial-gradient(800px 500px at 60% 110%, rgba(29,92,90,.35), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--text);
+  font-family:"DM Sans",system-ui,sans-serif;
+  min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+/* yaprak dokusu */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%23bfe3d6' stroke-width='1.2'%3E%3Cpath d='M20 200 C60 120 120 80 200 20'/%3E%3Cpath d='M60 140 C40 120 30 100 34 80 C54 90 66 112 60 140Z'/%3E%3Cpath d='M100 100 C80 80 74 58 80 40 C98 52 108 74 100 100Z'/%3E%3Cpath d='M80 122 C104 118 124 126 140 140 C118 150 96 144 80 122Z'/%3E%3Cpath d='M126 76 C150 72 170 80 184 94 C162 104 140 98 126 76Z'/%3E%3C/g%3E%3C/svg%3E");
+}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 16px 120px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.brand h1{
+  font-family:"Playfair Display",serif;font-weight:600;font-size:clamp(30px,6vw,44px);margin:0;line-height:1;
+  color:#fff;letter-spacing:.5px;
+}
+.brand h1 em{font-style:italic;font-weight:500;color:var(--neon);text-shadow:0 0 12px var(--neon-glow),0 0 2px #fff}
+.brand p{margin:6px 0 0;color:var(--muted);font-size:14px}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:rgba(15,42,45,.7);border:1px solid var(--line);border-radius:12px;padding:8px 12px;min-width:92px}
+.stat b{display:block;font-family:"Silkscreen",monospace;font-size:20px;font-weight:400;color:#fff}
+.stat span{font-size:12px;color:var(--muted)}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.search{flex:1 1 220px;position:relative}
+.search input{width:100%}
+input,select,textarea{
+  font:inherit;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(243,188,214,.15)}
+select option,select optgroup{background:#0b1f22;color:var(--text)}
+.seg{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{background:none;border:0;color:var(--muted);padding:7px 12px;border-radius:8px;font:inherit;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--teal);color:#fff}
+.btn{
+  font:inherit;font-weight:500;font-size:14px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);
+  padding:10px 14px;cursor:pointer;transition:transform .08s, background .15s, border-color .15s;white-space:nowrap
+}
+.btn:hover{border-color:#2c6a70}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:linear-gradient(180deg,#2c7a6c,#1d5c5a);border-color:#3b8c7d;color:#fff}
+.btn.neon{background:transparent;border-color:var(--neon);color:var(--neon);text-shadow:0 0 8px var(--neon-glow)}
+.btn.danger{border-color:#7a3434;color:#f2b0b0;background:rgba(122,52,52,.15)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{
+  background:linear-gradient(180deg,rgba(19,52,58,.85),rgba(11,31,34,.9));
+  border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden
+}
+.card.low{border-color:#7a5a2a}
+.card.empty{opacity:.72}
+.card-top{display:flex;gap:12px;align-items:flex-end}
+.bottle-box{
+  width:88px;height:200px;flex:0 0 88px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;
+  background:radial-gradient(60px 30px at 50% 96%, rgba(0,0,0,.45), transparent 70%);
+}
+canvas.bottle{image-rendering:pixelated;image-rendering:crisp-edges;width:80px;height:192px;transform-origin:50% 90%}
+canvas.bottle.pour{animation:pour .9s ease-in-out}
+@keyframes pour{0%{transform:rotate(0)}35%{transform:rotate(-24deg) translateX(-6px)}70%{transform:rotate(-24deg) translateX(-6px)}100%{transform:rotate(0)}}
+.info{flex:1;min-width:0}
+.who{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--neon);text-shadow:0 0 8px var(--neon-glow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bname{font-family:"Playfair Display",serif;font-size:19px;line-height:1.15;margin:3px 0 2px;color:#fff}
+.cat{font-size:12px;color:var(--muted)}
+.ml{font-family:"Silkscreen",monospace;font-size:26px;color:#fff;margin-top:10px;line-height:1}
+.ml small{font-size:12px;color:var(--muted)}
+.left{font-size:13px;color:var(--text);margin-top:6px;line-height:1.45}
+.left b{color:var(--gold);font-weight:700}
+.pips{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px}
+.pip{width:10px;height:10px;background:var(--gold);box-shadow:inset -2px -2px 0 rgba(0,0,0,.25)}
+.pip.half{background:linear-gradient(90deg,var(--gold) 50%,#264b4f 50%)}
+.pip.off{background:#1d3d41;box-shadow:none}
+.badge{position:absolute;top:10px;right:10px;font-family:"Silkscreen",monospace;font-size:11px;padding:3px 7px;border-radius:6px}
+.badge.low{background:rgba(232,160,74,.15);color:var(--warn);border:1px solid rgba(232,160,74,.5)}
+.badge.empty{background:rgba(224,106,106,.15);color:var(--danger);border:1px solid rgba(224,106,106,.5)}
+.actions{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+.actions .btn{padding:10px 8px}
+.meta{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+
+.empty-state{text-align:center;padding:50px 16px;color:var(--muted);border:1px dashed var(--line);border-radius:16px}
+.empty-state canvas{image-rendering:pixelated;width:60px;height:144px;opacity:.6}
+.empty-state h3{font-family:"Playfair Display",serif;color:#fff;font-weight:500;font-style:italic;font-size:24px;margin:10px 0 6px}
+
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:14px 18px;font-size:15px;border-radius:14px}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(3,10,11,.72);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:20;padding:0}
+.modal.open{display:flex}
+.sheet{
+  width:100%;max-width:620px;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#123236,#0b1f22);
+  border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom));
+}
+@media (min-width:700px){.modal{align-items:center}.sheet{border-radius:18px;border-bottom:1px solid var(--line)}}
+.sheet h2{font-family:"Playfair Display",serif;font-weight:500;font-style:italic;font-size:26px;margin:0 0 4px;color:#fff}
+.sheet .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.close{float:right;background:none;border:0;color:var(--muted);font-size:26px;cursor:pointer;line-height:1}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:13px;color:var(--muted)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.preview{display:flex;gap:16px;align-items:flex-end;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:14px}
+.preview canvas{image-rendering:pixelated;width:70px;height:168px}
+.sizes{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:13px;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--bg2);color:var(--muted);cursor:pointer}
+.chip.on{border-color:var(--neon);color:var(--neon)}
+.detail-top{display:flex;gap:18px;align-items:flex-end;margin-bottom:14px}
+.detail-top canvas{image-rendering:pixelated;width:110px;height:264px}
+.log{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+.log li{display:flex;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(31,74,79,.6);font-size:14px}
+.log li span:last-child{color:var(--muted);font-size:12px;white-space:nowrap}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.custom{display:flex;gap:8px;margin:6px 0 12px}
+.custom input{width:110px}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;
+  background:#0f2a2d;border:1px solid var(--neon);color:#fff;padding:10px 14px;border-radius:12px;font-size:14px;transition:.25s;max-width:calc(100% - 32px);box-shadow:0 0 20px rgba(243,188,214,.2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast button{margin-left:10px;background:none;border:0;color:var(--neon);font:inherit;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Şişe <em>Takip</em></h1>
+      <p>Barda açılan şişeler · kalan miktar · kaç tek / duble daha</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search"><input id="q" type="search" placeholder="Müşteri ya da şişe ara…" autocomplete="off"></div>
+    <div class="seg" id="tabs">
+      <button data-tab="open" class="on">Açık</button>
+      <button data-tab="low">Azalan</button>
+      <button data-tab="done">Biten</button>
+    </div>
+    <select id="sort" aria-label="Sıralama">
+      <option value="recent">Son işlem</option>
+      <option value="least">En az kalan</option>
+      <option value="name">Müşteri adı</option>
+    </select>
+    <button class="btn ghost" id="settingsBtn" title="Ayarlar">⚙︎ Ayarlar</button>
+  </div>
+
+  <div id="list" class="grid"></div>
+</div>
+
+<button class="btn primary fab" id="newBtn">＋ Şişe Aç</button>
+
+<!-- Yeni şişe -->
+<div class="modal" id="newModal">
+  <div class="sheet">
+    <button class="close" data-close>×</button>
+    <h2>Yeni şişe aç</h2>
+    <p class="sub">Müşterinin bardaki şişesini kaydet.</p>
+    <div class="preview">
+      <canvas id="newPreview" width="20" height="48"></canvas>
+      <div>
+        <div class="cat" id="newCat"></div>
+        <div class="bname" id="newName"></div>
+        <div class="left" id="newLeft"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="fCustomer">Müşteri adı</label>
+      <input id="fCustomer" placeholder="örn. Ahmet Y." autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="fBottle">Şişe (menüden)</label>
+      <select id="fBottle"></select>
+    </div>
+    <div class="field">
+      <label>Şişe hacmi</label>
+      <div class="sizes" id="fSizes"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="fFirst">İlk servis</label>
+        <select id="fFirst">
+          <option value="0">Henüz yok</option>
+          <option value="single">Tek</option>
+          <option value="double" selected>Duble</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fNote">Not (masa, telefon…)</label>
+        <input id="fNote" placeholder="opsiyonel" autocomplete="off">
+      </div>
+    </div>
+    <button class="btn primary" id="createBtn" style="width:100%">Şişeyi aç</button>
+  </div>
+</div>
+
+<!-- Detay -->
+<div class="modal" id="detailModal">
+  <div class="sheet" id="detailSheet"></div>
+</div>
+
+<!-- Ayarlar -->
+<div class="modal" id="settingsModal">
+  <div class="sheet">
+    <button class="close" data-close>×</button>
+    <h2>Ayarlar</h2>
+    <p class="sub">Servis ölçülerini barınıza göre ayarlayın.</p>
+    <div class="row2">
+      <div class="field"><label for="sSingle">Tek (ml)</label><input id="sSingle" type="number" min="10" max="200" step="5"></div>
+      <div class="field"><label for="sDouble">Duble (ml)</label><input id="sDouble" type="number" min="20" max="400" step="5"></div>
+    </div>
+    <div class="field">
+      <label for="sLow">“Azalıyor” uyarısı: kalan duble sayısı ≤</label>
+      <input id="sLow" type="number" min="0" max="10" step="1">
+    </div>
+    <button class="btn primary" id="saveSettings" style="width:100%;margin-bottom:16px">Kaydet</button>
+    <div class="btnrow">
+      <button class="btn" id="exportBtn">Yedeği indir (JSON)</button>
+      <label class="btn" for="importFile" style="display:inline-block">Yedekten yükle</label>
+      <input id="importFile" type="file" accept="application/json" hidden>
+    </div>
+    <p class="note">Veriler bu cihazın tarayıcısında saklanır. Başka bir cihaza taşımak için yedeği indirip orada yükleyin.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   MENÜ — şişe kataloğu (fiyat değil, şişe görünümü)
+   shape: square | round | tall | squat | flask | decanter
+   glass: cam rengi, gAmt: cam renginin sıvıya etkisi (0-0.65)
+   ============================================================ */
+const CATALOG = [
+  // Whisky / Scotch
+  {id:"jw-black",  cat:"Whisky / Scotch",  name:"J.W. Black Label",       shape:"square",  glass:"#a9c4c0", gAmt:.1,  liquid:"#c27a2c", cap:"#1b1b1b", label:"#151515", accent:"#d4af37"},
+  {id:"chivas-12", cat:"Whisky / Scotch",  name:"Chivas Regal 12 y.o.",   shape:"round",   glass:"#a9c4c0", gAmt:.1,  liquid:"#c98a33", cap:"#b59345", label:"#ece2c8", accent:"#9a6b22"},
+  {id:"jw-18",     cat:"Whisky / Scotch",  name:"J.W. aged 18 y.",        shape:"square",  glass:"#a9c4c0", gAmt:.1,  liquid:"#b86d24", cap:"#2a2a2a", label:"#cdc6b8", accent:"#8a6d3b"},
+  {id:"jw-blue",   cat:"Whisky / Scotch",  name:"J.W. Blue Label",        shape:"square",  glass:"#a9c4c0", gAmt:.1,  liquid:"#a85d1f", cap:"#141414", label:"#1f3f8a", accent:"#d4af37"},
+  // Irish
+  {id:"jameson",   cat:"Whisky / Irish",   name:"Jameson",                shape:"round",   glass:"#3f7a4c", gAmt:.35, liquid:"#c98a33", cap:"#b59345", label:"#efe6cf", accent:"#2e6b3a"},
+  // Bourbon
+  {id:"jack",      cat:"Whisky / Bourbon", name:"Jack Daniel’s",          shape:"square",  glass:"#a9c4c0", gAmt:.1,  liquid:"#b5651d", cap:"#111111", label:"#141414", accent:"#e8e8e8"},
+  {id:"jim-beam",  cat:"Whisky / Bourbon", name:"Jim Beam White",         shape:"round",   glass:"#a9c4c0", gAmt:.1,  liquid:"#bf7428", cap:"#1f1f1f", label:"#f2efe6", accent:"#b22222"},
+  // Malt
+  {id:"ardbeg-10", cat:"Whisky / Malt",    name:"Ardbeg 10 y.o.",         shape:"tall",    glass:"#1f4a2a", gAmt:.55, liquid:"#e6c86a", cap:"#10301a", label:"#e8e8e0", accent:"#1f5f3a"},
+  {id:"talisker-10",cat:"Whisky / Malt",   name:"Talisker 10 y.o.",       shape:"round",   glass:"#a9c4c0", gAmt:.1,  liquid:"#d19a3e", cap:"#6e1f1f", label:"#f0ead8", accent:"#6e1f1f"},
+  // Cognac
+  {id:"martell-vs",  cat:"Konyak / Cognac",name:"Martell V.S.",           shape:"flask",   glass:"#a9c4c0", gAmt:.1,  liquid:"#a0521c", cap:"#c9a24d", label:"#f1ead6", accent:"#8a6d3b"},
+  {id:"martell-vsop",cat:"Konyak / Cognac",name:"Martell V.S.O.P.",       shape:"flask",   glass:"#a9c4c0", gAmt:.1,  liquid:"#8e4a1c", cap:"#c9a24d", label:"#2b2b2b", accent:"#c9a24d"},
+  {id:"martell-xo",  cat:"Konyak / Cognac",name:"Martell X.O.",           shape:"decanter",glass:"#a9c4c0", gAmt:.1,  liquid:"#7a3a16", cap:"#c9a24d", label:"#1c1c1c", accent:"#c9a24d", small:true},
+  // Gin
+  {id:"gordons",     cat:"Cin / Gin",      name:"Gordon’s Gin",           shape:"square",  glass:"#3d8a4e", gAmt:.45, liquid:"#e6f2ee", cap:"#c8102e", label:"#f3f0e6", accent:"#c8102e"},
+  {id:"gordons-lemon",cat:"Cin / Gin",     name:"Gordon’s Sicilian Lemon",shape:"square",  glass:"#a9c4c0", gAmt:.1,  liquid:"#f2e9a6", cap:"#f2d23a", label:"#f6e27a", accent:"#2e8b57"},
+  {id:"tanqueray",   cat:"Cin / Gin",      name:"Tanqueray",              shape:"round",   glass:"#2c6e47", gAmt:.5,  liquid:"#e6f2ee", cap:"#c8a23a", label:"#c8102e", accent:"#f2f2f2"},
+  {id:"tanqueray-ten",cat:"Cin / Gin",     name:"Tanqueray Ten",          shape:"tall",    glass:"#5aa07a", gAmt:.35, liquid:"#e6f2ee", cap:"#b9c2c4", label:"#e6e6e6", accent:"#2c6e47"},
+  {id:"hendricks",   cat:"Cin / Gin",      name:"Hendrick’s",             shape:"flask",   glass:"#3a2618", gAmt:.6,  liquid:"#e6f2ee", cap:"#1a1a1a", label:"#e9e2cf", accent:"#1a1a1a"},
+  // Rum
+  {id:"cm-white",    cat:"Rom / Rum",      name:"Captain Morgan White",   shape:"round",   glass:"#a9c4c0", gAmt:.1,  liquid:"#e6f2ee", cap:"#1f3b73", label:"#ffffff", accent:"#1f3b73"},
+  {id:"cm-gold",     cat:"Rom / Rum",      name:"Captain Morgan Gold",    shape:"round",   glass:"#a9c4c0", gAmt:.1,  liquid:"#b8732a", cap:"#8b1a1a", label:"#f3e3b6", accent:"#8b1a1a"},
+  // Vermouth
+  {id:"martini-bianco",cat:"Vermut / Vermouth",name:"Martini Bianco",    shape:"tall",    glass:"#a9c4c0", gAmt:.1,  liquid:"#efe4b8", cap:"#c8102e", label:"#ffffff", accent:"#c8102e"},
+  {id:"martini-dry", cat:"Vermut / Vermouth",name:"Martini Extra Dry",   shape:"tall",    glass:"#3d8a4e", gAmt:.35, liquid:"#eef0d8", cap:"#2e6b3a", label:"#ffffff", accent:"#2e6b3a"},
+  {id:"martini-rosso",cat:"Vermut / Vermouth",name:"Martini Rosso",      shape:"tall",    glass:"#a9c4c0", gAmt:.1,  liquid:"#8b1e1e", cap:"#c8102e", label:"#ffffff", accent:"#c8102e"},
+  // Tequila
+  {id:"casa-blanco", cat:"Tekila / Tequila",name:"Casamigos Blanco",     shape:"squat",   glass:"#a9c4c0", gAmt:.1,  liquid:"#e6f2ee", cap:"#5a3d22", label:"#151515", accent:"#e8e8e8"},
+  {id:"casa-repo",   cat:"Tekila / Tequila",name:"Casamigos Reposado",   shape:"squat",   glass:"#a9c4c0", gAmt:.1,  liquid:"#e0b35a", cap:"#5a3d22", label:"#151515", accent:"#d4af37"},
+  // Vodka
+  {id:"smirnoff",    cat:"Votka / Vodka",  name:"Smirnoff Red",           shape:"tall",    glass:"#a9c4c0", gAmt:.1,  liquid:"#e6f2ee", cap:"#c8102e", label:"#c8102e", accent:"#f2f2f2"},
+  {id:"grey-goose",  cat:"Votka / Vodka",  name:"Grey Goose",             shape:"tall",    glass:"#d4e2ea", gAmt:.45, liquid:"#e9f3f6", cap:"#8a929a", label:"#dfe7ee", accent:"#1f4f8a"},
+  {id:"belvedere",   cat:"Votka / Vodka",  name:"Belvedere",              shape:"tall",    glass:"#dfe6e6", gAmt:.45, liquid:"#e9f3f6", cap:"#d8d8d8", label:"#f2f2f2", accent:"#1a1a1a"},
+  {id:"beluga",      cat:"Votka / Vodka",  name:"Beluga",                 shape:"round",   glass:"#a9c4c0", gAmt:.1,  liquid:"#e6f2ee", cap:"#111111", label:"#151515", accent:"#c0c0c0"},
+  // Liqueur
+  {id:"baileys",     cat:"Likör / Liqueur",name:"Bailey’s",               shape:"round",   glass:"#3a2618", gAmt:.3,  liquid:"#d9c3a5", cap:"#1a1a1a", label:"#1a1a1a", accent:"#c9a24d"},
+  {id:"kahlua",      cat:"Likör / Liqueur",name:"Kahlúa",                 shape:"flask",   glass:"#a9c4c0", gAmt:.1,  liquid:"#2e170c", cap:"#c8a23a", label:"#f4e3b0", accent:"#c8102e"},
+  {id:"cointreau",   cat:"Likör / Liqueur",name:"Cointreau",              shape:"square",  glass:"#c8742a", gAmt:.55, liquid:"#f3ebd0", cap:"#7a3a16", label:"#c8102e", accent:"#f5f5f5"},
+  {id:"malibu",      cat:"Likör / Liqueur",name:"Malibu",                 shape:"tall",    glass:"#eeeeee", gAmt:.55, liquid:"#f5f5f0", cap:"#1a1a1a", label:"#e8d17a", accent:"#2a7a3a"},
+  {id:"safari",      cat:"Likör / Liqueur",name:"Safari",                 shape:"round",   glass:"#a9c4c0", gAmt:.1,  liquid:"#e7d65a", cap:"#2e8b57", label:"#f5c518", accent:"#2e8b57"},
+  {id:"jager",       cat:"Likör / Liqueur",name:"Jägermeister",           shape:"flask",   glass:"#1f3d22", gAmt:.6,  liquid:"#3a200f", cap:"#1f3d22", label:"#f28c28", accent:"#1a1a1a"},
+  {id:"limoncello",  cat:"Likör / Liqueur",name:"Limoncello",             shape:"tall",    glass:"#a9c4c0", gAmt:.1,  liquid:"#f2e14a", cap:"#f2c500", label:"#ffffff", accent:"#f2c500"},
+];
+const BY_ID = Object.fromEntries(CATALOG.map(b=>[b.id,b]));
+const SIZES = [500,700,750,1000];
+
+/* ============================================================
+   PIXEL ŞİŞE ÇİZİCİ — 20×48 piksel ızgara
+   ============================================================ */
+const PW=20, PH=48;
+const SHAPES = {
+  square:  [["cap",4,6],["ring",1,7],["neck",9,4],["sh",1,8],["sh",1,12],["sh",1,15],["body",28,16],["base",1,14]],
+  round:   [["cap",4,6],["ring",1,7],["neck",8,4],["sh",1,6],["sh",1,8],["sh",1,10],["sh",1,12],["sh",1,14],["sh",1,15],["body",24,16],["base",1,14]],
+  tall:    [["cap",5,6],["neck",10,4],["sh",1,7],["sh",1,10],["sh",1,12],["body",26,13],["base",1,11]],
+  squat:   [["cap",4,10],["ring",1,10],["neck",3,6],["sh",1,12],["sh",1,16],["sh",1,18],["body",20,18],["base",1,16]],
+  flask:   [["cap",4,6],["ring",1,7],["neck",6,4],["sh",1,10],["sh",1,14],["sh",1,16],["body",26,16],["base",1,16]],
+  decanter:[["cap",3,4],["cap",2,8],["ring",1,6],["neck",5,4],["sh",1,8],["sh",1,12],["sh",1,15],["sh",1,17],["body",14,18],["body",1,17],["body",1,16],["body",1,14],["base",1,12]],
+};
+const profileCache = {};
+function profile(shape){
+  if(profileCache[shape]) return profileCache[shape];
+  const rows=[];
+  for(const [part,n,w] of SHAPES[shape]) for(let i=0;i<n;i++) rows.push({part,w});
+  const off = PH-1-rows.length; // alta hizala, 1px boşluk
+  rows.forEach((r,i)=>{ r.y=off+i; r.l=Math.floor((PW-r.w)/2); r.r=r.l+r.w-1; });
+  const maxBody = Math.max(...rows.filter(r=>r.part==="body").map(r=>r.w));
+  const bodyRows = rows.filter(r=>r.part==="body" && r.w===maxBody);
+  const fill = rows.filter(r=>r.part==="sh"||r.part==="body");
+  const caps = fill.map(r=>Math.pow(Math.max(r.w-2,1),2)); // yuvarlak kesit ~ genişlik²
+  const total = caps.reduce((a,b)=>a+b,0);
+  return profileCache[shape] = {rows, bodyRows, fill, caps, total};
+}
+const hex2rgb=h=>{h=h.replace("#","");return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16));};
+const rgb2hex=a=>"#"+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join("");
+const mix=(a,b,t)=>{const A=hex2rgb(a),B=hex2rgb(b);return rgb2hex(A.map((v,i)=>v+(B[i]-v)*t));};
+const lighten=(c,t)=>mix(c,"#ffffff",t), darken=(c,t)=>mix(c,"#000000",t);
+
+function drawBottle(canvas, spec, frac){
+  frac = Math.max(0,Math.min(1,frac));
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,PW,PH);
+  const P = profile(spec.shape);
+  const g = Math.min(spec.gAmt??.1,.65);
+  const outline = mix(lighten(spec.glass,.15),"#0b1f22",.25);
+  const emptyIn = mix("#14302f", spec.glass, .28);
+  const liquid  = mix(spec.liquid, spec.glass, g*.6);
+  const surface = lighten(liquid,.28);
+
+  // dolu satırları hesapla (alttan yukarı)
+  const filled = new Map(); // y -> 1 tam, 0.5 yarım (dither)
+  let target = frac*P.total, acc=0;
+  for(let i=P.fill.length-1;i>=0;i--){
+    const r=P.fill[i], c=P.caps[i];
+    if(target<=0.0001) break;
+    if(acc+c <= target+0.0001){ filled.set(r.y,1); acc+=c; }
+    else { const p=(target-acc)/c; if(p>0.66) filled.set(r.y,1); else if(p>0.2) filled.set(r.y,.5); break; }
+  }
+  let topY = Infinity; filled.forEach((v,y)=>{ if(v===1) topY=Math.min(topY,y); });
+
+  const labelTop = P.bodyRows.length ? P.bodyRows[Math.round(P.bodyRows.length*(spec.small?.42:.3))].y : -1;
+  const labelBot = P.bodyRows.length ? P.bodyRows[Math.round(P.bodyRows.length*(spec.small?.66:.78))].y : -1;
+
+  const px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,1,1);};
+
+  for(const r of P.rows){
+    const {y,l,r:rt,part,w}=r;
+    if(part==="cap"){
+      for(let x=l;x<=rt;x++){
+        let c=spec.cap;
+        if(y===P.rows[0].y) c=lighten(c,.25);
+        if(x===l) c=lighten(c,.18);
+        if(x===rt) c=darken(c,.35);
+        px(x,y,c);
+      }
+      continue;
+    }
+    if(part==="ring"){ for(let x=l;x<=rt;x++) px(x,y, x===rt?darken(spec.accent,.3):mix(spec.accent,spec.cap,.4)); continue; }
+    if(part==="base"){ for(let x=l;x<=rt;x++) px(x,y, darken(outline,.25)); continue; }
+    // cam gövde
+    for(let x=l;x<=rt;x++){
+      if(x===l||x===rt){ px(x,y, x===l?lighten(outline,.1):darken(outline,.2)); continue; }
+      const f = filled.get(y);
+      let isLiq = f===1 || (f===.5 && (x+y)%2===0);
+      let c = isLiq ? (y===topY ? surface : liquid) : emptyIn;
+      // etiket
+      const inset = w>=16?3:2;
+      if(part==="body" && y>=labelTop && y<=labelBot && x>=l+inset && x<=rt-inset && w===P.bodyRows[0].w){
+        c = spec.label;
+        if(y===labelTop||y===labelBot) c = spec.accent;
+        const mid = Math.round((labelTop+labelBot)/2), cx=Math.floor(PW/2);
+        if((y===mid||y===mid-1) && (x===cx||x===cx-1)) c = spec.accent;
+        if(y===mid+2 && x>=cx-3 && x<=cx+2 && x%2===0) c = mix(spec.label,spec.accent,.6);
+        if(x===rt-inset) c=darken(c,.2);
+      } else {
+        if(x===l+1 && part!=="neck") c = lighten(c,.32);          // parlama
+        else if(x===rt-1) c = darken(c,.22);                      // gölge
+      }
+      if(part==="neck" && y===P.rows.find(q=>q.part==="neck").y+4 && spec.shape!=="squat") c=mix(spec.accent,spec.cap,.3);
+      px(x,y,c);
+    }
+  }
+}
+
+/* ============================================================
+   VERİ
+   ============================================================ */
+const KEY="sise-takip-v1";
+const defaults={settings:{single:40,double:80,lowDoubles:2},bottles:[]};
+let state = load();
+function load(){
+  try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&s.bottles) return {...defaults,...s,settings:{...defaults.settings,...s.settings}}; }catch(e){}
+  return structuredClone(defaults);
+}
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){} }
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
+const S=()=>state.settings;
+
+function remaining(b){ return Math.max(0, b.size - b.log.reduce((a,e)=>a+e.ml,0)); }
+function isLow(b){ const r=remaining(b); return r>0 && r <= S().double*S().lowDoubles; }
+function leftText(r){
+  const d=Math.floor(r/S().double), s=Math.floor(r/S().single);
+  const restD = r - d*S().double;
+  if(r<=0) return "Şişe bitti.";
+  if(r<S().single) return `Bir tekten az kaldı (<b>${r} ml</b>).`;
+  let t = `<b>${d}</b> duble`;
+  if(restD>=S().single) t += ` + <b>1</b> tek`;
+  return `${t} ya da <b>${s}</b> tek daha`;
+}
+const fmtDate=t=>new Date(t).toLocaleString("tr-TR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ============================================================
+   LİSTE
+   ============================================================ */
+let tab="open", query="", sortBy="recent";
+const $=s=>document.querySelector(s);
+
+function render(){
+  const all = state.bottles;
+  const open = all.filter(b=>remaining(b)>0 && !b.closed);
+  const low = open.filter(isLow);
+  const done = all.filter(b=>remaining(b)<=0 || b.closed);
+  const totalMl = open.reduce((a,b)=>a+remaining(b),0);
+  $("#stats").innerHTML = `
+    <div class="stat"><b>${open.length}</b><span>açık şişe</span></div>
+    <div class="stat"><b>${low.length}</b><span>azalan</span></div>
+    <div class="stat"><b>${(totalMl/1000).toFixed(1)}L</b><span>bardaki toplam</span></div>`;
+
+  let items = tab==="open"?open : tab==="low"?low : done;
+  if(query){ const q=query.toLocaleLowerCase("tr"); items=items.filter(b=>(b.customer+" "+BY_ID[b.catalogId].name+" "+(b.note||"")).toLocaleLowerCase("tr").includes(q)); }
+  const last=b=>b.log.length?b.log[b.log.length-1].t:b.openedAt;
+  items=[...items].sort(sortBy==="least"?(a,b)=>remaining(a)/a.size-remaining(b)/b.size : sortBy==="name"?(a,b)=>a.customer.localeCompare(b.customer,"tr") : (a,b)=>last(b)-last(a));
+
+  const list=$("#list");
+  if(!items.length){
+    list.innerHTML=`<div class="empty-state" style="grid-column:1/-1">
+      <canvas width="20" height="48" id="emptyCv"></canvas>
+      <h3>${tab==="open"?"Henüz açık şişe yok":tab==="low"?"Azalan şişe yok":"Biten şişe yok"}</h3>
+      <div>${tab==="open"?"Sağ alttaki <b>＋ Şişe Aç</b> ile ilk şişeyi kaydedin.":""}</div></div>`;
+    drawBottle($("#emptyCv"), BY_ID["jw-black"], tab==="done"?0:.85);
+    return;
+  }
+  list.innerHTML = items.map(b=>{
+    const spec=BY_ID[b.catalogId], r=remaining(b), low=isLow(b), empty=r<=0||b.closed;
+    const pips = Math.ceil(b.size/S().double);
+    const full = Math.floor(r/S().double), half = (r%S().double)>=S().single?1:0;
+    const pipHtml = pips<=30 ? `<div class="pips" title="Her kare bir duble">${Array.from({length:pips},(_,i)=>`<i class="pip ${i<full?"":i===full&&half?"half":"off"}"></i>`).join("")}</div>`:"";
+    return `<article class="card ${low?"low":""} ${empty?"empty":""}" data-id="${b.id}">
+      ${empty?`<span class="badge empty">BİTTİ</span>`:low?`<span class="badge low">AZALIYOR</span>`:""}
+      <div class="card-top">
+        <div class="bottle-box" data-open="${b.id}"><canvas class="bottle" width="20" height="48" data-cv="${b.id}"></canvas></div>
+        <div class="info">
+          <div class="who">${esc(b.customer)}</div>
+          <div class="bname">${esc(spec.name)}</div>
+          <div class="cat">${esc(spec.cat)} · ${b.size/10} cl</div>
+          <div class="ml">${r}<small> ml</small></div>
+          <div class="left">${leftText(r)}</div>
+        </div>
+      </div>
+      ${pipHtml}
+      ${empty?`<div class="actions" style="grid-template-columns:1fr"><button class="btn ghost" data-open="${b.id}">Geçmişi gör</button></div>`:
+      `<div class="actions">
+        <button class="btn" data-pour="single" data-id="${b.id}">Tek · ${S().single}ml</button>
+        <button class="btn primary" data-pour="double" data-id="${b.id}">Duble · ${S().double}ml</button>
+        <button class="btn ghost" data-open="${b.id}" title="Detay">⋯</button>
+      </div>`}
+      <div class="meta"><span>Açılış: ${fmtDate(b.openedAt)}</span><span>${b.log.length} servis</span></div>
+    </article>`;
+  }).join("");
+  items.forEach(b=>drawBottle(document.querySelector(`[data-cv="${b.id}"]`), BY_ID[b.catalogId], remaining(b)/b.size));
+}
+
+/* ============================================================
+   SERVİS
+   ============================================================ */
+function animateLevel(canvases, spec, from, to){
+  const t0=performance.now(), D=650;
+  canvases.forEach(c=>{c.classList.remove("pour");void c.offsetWidth;c.classList.add("pour");});
+  const step=now=>{
+    const k=Math.min(1,(now-t0-200)/D), e=k<0?0:1-Math.pow(1-k,3);
+    canvases.forEach(c=>drawBottle(c,spec,from+(to-from)*e));
+    if(k<1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function pour(id, kind, customMl){
+  const b=state.bottles.find(x=>x.id===id); if(!b) return;
+  const before=remaining(b);
+  let ml = kind==="single"?S().single : kind==="double"?S().double : Math.round(customMl);
+  if(!(ml>0)) return;
+  if(before<=0) return;
+  if(ml>before){
+    if(!confirm(`Şişede sadece ${before} ml kaldı. Kalanın hepsi servis edilsin mi?`)) return;
+    ml=before;
+  }
+  b.log.push({t:Date.now(), ml, kind});
+  save();
+  const after=remaining(b), spec=BY_ID[b.catalogId];
+  const cvs=[...document.querySelectorAll(`[data-cv="${id}"]`), ...(detailId===id?[$("#detailCv")]:[])].filter(Boolean);
+  // önce animasyon, sonra liste yenile
+  animateLevel(cvs, spec, before/b.size, after/b.size);
+  setTimeout(()=>{ render(); if(detailId===id) openDetail(id,true); }, 950);
+  const label = kind==="single"?"Tek":kind==="double"?"Duble":"Servis";
+  toast(`${esc(b.customer)} · ${esc(spec.name)}: ${label} ${ml} ml → kalan ${after} ml`, ()=>{ b.log.pop(); save(); render(); if(detailId===id) openDetail(id,true); });
+}
+
+let toastTimer;
+function toast(html, undo){
+  const t=$("#toast");
+  t.innerHTML = html + (undo?`<button id="undoBtn">Geri al</button>`:"");
+  t.classList.add("show");
+  if(undo) $("#undoBtn").onclick=()=>{ undo(); t.classList.remove("show"); };
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),5000);
+}
+
+/* ============================================================
+   DETAY
+   ============================================================ */
+let detailId=null;
+function openDetail(id, keepOpen){
+  const b=state.bottles.find(x=>x.id===id); if(!b) return;
+  detailId=id;
+  const spec=BY_ID[b.catalogId], r=remaining(b), empty=r<=0||b.closed;
+  const kinds={single:"Tek",double:"Duble",custom:"Özel"};
+  $("#detailSheet").innerHTML=`
+    <button class="close" data-close>×</button>
+    <div class="detail-top">
+      <canvas id="detailCv" width="20" height="48"></canvas>
+      <div>
+        <div class="who">${esc(b.customer)}</div>
+        <h2>${esc(spec.name)}</h2>
+        <div class="cat">${esc(spec.cat)} · ${b.size/10} cl${b.note?` · ${esc(b.note)}`:""}</div>
+        <div class="ml">${r}<small> / ${b.size} ml</small></div>
+        <div class="left">${leftText(r)}</div>
+      </div>
+    </div>
+    ${empty?"":`
+    <div class="btnrow">
+      <button class="btn" data-pour="single" data-id="${b.id}">Tek · ${S().single}ml</button>
+      <button class="btn primary" data-pour="double" data-id="${b.id}">Duble · ${S().double}ml</button>
+    </div>
+    <div class="custom">
+      <input id="customMl" type="number" min="5" max="${r}" step="5" placeholder="ml">
+      <button class="btn" id="customBtn">Özel miktar düş</button>
+    </div>`}
+    <h3 style="font-family:'Playfair Display',serif;font-weight:500;font-style:italic;margin:16px 0 6px">Servis geçmişi</h3>
+    <ul class="log">
+      ${b.log.length?[...b.log].map((e,i)=>({e,i})).reverse().map(({e})=>`<li><span>${kinds[e.kind]||"Servis"} · <b>${e.ml} ml</b></span><span>${fmtDate(e.t)}</span></li>`).join(""):`<li><span>Henüz servis yok</span><span></span></li>`}
+      <li><span>Şişe açıldı · ${b.size} ml</span><span>${fmtDate(b.openedAt)}</span></li>
+    </ul>
+    <div class="btnrow" style="margin-top:16px">
+      ${b.log.length?`<button class="btn" id="undoLast">Son servisi geri al</button>`:""}
+      ${b.closed?`<button class="btn" id="reopenBtn">Yeniden aç</button>`:(r>0?`<button class="btn" id="closeBtn">Şişeyi kapat (bitti say)</button>`:"")}
+      <button class="btn" id="renameBtn">Müşteriyi düzenle</button>
+      <button class="btn danger" id="delBtn">Sil</button>
+    </div>`;
+  drawBottle($("#detailCv"), spec, r/b.size);
+  if(!keepOpen) openModal("#detailModal");
+  const cb=$("#customBtn"); if(cb) cb.onclick=()=>{ const v=+$("#customMl").value; if(v>0) pour(id,"custom",v); };
+  const ul=$("#undoLast"); if(ul) ul.onclick=()=>{ b.log.pop(); save(); render(); openDetail(id,true); };
+  const cl=$("#closeBtn"); if(cl) cl.onclick=()=>{ if(confirm("Şişe bitti olarak işaretlensin mi?")){ b.closed=true; save(); render(); openDetail(id,true);} };
+  const ro=$("#reopenBtn"); if(ro) ro.onclick=()=>{ b.closed=false; save(); render(); openDetail(id,true); };
+  $("#renameBtn").onclick=()=>{ const n=prompt("Müşteri adı",b.customer); if(n&&n.trim()){ b.customer=n.trim(); const no=prompt("Not",b.note||""); if(no!==null) b.note=no.trim(); save(); render(); openDetail(id,true);} };
+  $("#delBtn").onclick=()=>{ if(confirm(`${b.customer} – ${spec.name} kaydı silinsin mi?`)){ state.bottles=state.bottles.filter(x=>x.id!==id); save(); closeModals(); render(); } };
+}
+
+/* ============================================================
+   YENİ ŞİŞE
+   ============================================================ */
+let newSize=700;
+function fillCatalogSelect(){
+  const groups={};
+  CATALOG.forEach(b=>(groups[b.cat]??=[]).push(b));
+  $("#fBottle").innerHTML=Object.entries(groups).map(([g,arr])=>`<optgroup label="${esc(g)}">${arr.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("")}</optgroup>`).join("");
+}
+function renderSizes(){
+  $("#fSizes").innerHTML=SIZES.map(s=>`<button type="button" class="chip ${s===newSize?"on":""}" data-size="${s}">${s/10} cl</button>`).join("");
+}
+function updatePreview(){
+  const spec=BY_ID[$("#fBottle").value];
+  const first=$("#fFirst").value, used = first==="single"?S().single:first==="double"?S().double:0;
+  const r=Math.max(0,newSize-used);
+  $("#newCat").textContent=spec.cat+" · "+newSize/10+" cl";
+  $("#newName").textContent=spec.name;
+  $("#newLeft").innerHTML=`Açılıştan sonra <b>${r} ml</b> · ${leftText(r)}`;
+  drawBottle($("#newPreview"), spec, r/newSize);
+}
+function openNew(){
+  $("#fCustomer").value=""; $("#fNote").value=""; newSize=700; renderSizes();
+  $("#fFirst").options[1].text=`Tek (${S().single} ml)`; $("#fFirst").options[2].text=`Duble (${S().double} ml)`;
+  updatePreview(); openModal("#newModal"); setTimeout(()=>$("#fCustomer").focus(),50);
+}
+function create(){
+  const customer=$("#fCustomer").value.trim();
+  if(!customer){ $("#fCustomer").focus(); $("#fCustomer").style.borderColor="var(--danger)"; return; }
+  $("#fCustomer").style.borderColor="";
+  const first=$("#fFirst").value, now=Date.now();
+  const b={id:uid(),customer,note:$("#fNote").value.trim(),catalogId:$("#fBottle").value,size:newSize,openedAt:now,log:[],closed:false};
+  if(first!=="0") b.log.push({t:now+1,ml:first==="single"?S().single:S().double,kind:first});
+  state.bottles.push(b); save();
+  closeModals(); tab="open"; syncTabs(); render();
+  toast(`${esc(customer)} için ${esc(BY_ID[b.catalogId].name)} açıldı · kalan ${remaining(b)} ml`);
+}
+
+/* ============================================================
+   MODAL / OLAYLAR
+   ============================================================ */
+function openModal(sel){ $(sel).classList.add("open"); document.body.style.overflow="hidden"; }
+function closeModals(){ document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open")); document.body.style.overflow=""; detailId=null; }
+function syncTabs(){ document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab)); }
+
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const p=t.closest("[data-pour]"); if(p){ pour(p.dataset.id,p.dataset.pour); return; }
+  const o=t.closest("[data-open]"); if(o){ openDetail(o.dataset.open); return; }
+  if(t.closest("[data-close]") || t.classList.contains("modal")){ closeModals(); return; }
+  const sz=t.closest("[data-size]"); if(sz){ newSize=+sz.dataset.size; renderSizes(); updatePreview(); return; }
+  const tb=t.closest("#tabs button"); if(tb){ tab=tb.dataset.tab; syncTabs(); render(); }
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModals(); });
+$("#q").addEventListener("input",e=>{ query=e.target.value.trim(); render(); });
+$("#sort").addEventListener("change",e=>{ sortBy=e.target.value; render(); });
+$("#newBtn").onclick=openNew;
+$("#fBottle").addEventListener("change",updatePreview);
+$("#fFirst").addEventListener("change",updatePreview);
+$("#createBtn").onclick=create;
+$("#fCustomer").addEventListener("keydown",e=>{ if(e.key==="Enter") create(); });
+
+$("#settingsBtn").onclick=()=>{ $("#sSingle").value=S().single; $("#sDouble").value=S().double; $("#sLow").value=S().lowDoubles; openModal("#settingsModal"); };
+$("#saveSettings").onclick=()=>{
+  const s=+$("#sSingle").value, d=+$("#sDouble").value, l=+$("#sLow").value;
+  if(!(s>0&&d>=s)){ alert("Duble, tekten küçük olamaz."); return; }
+  state.settings={single:s,double:d,lowDoubles:Math.max(0,l|0)}; save(); closeModals(); render(); toast("Ayarlar kaydedildi");
+};
+$("#exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`sise-takip-${new Date().toISOString().slice(0,10)}.json`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$("#importFile").onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const data=JSON.parse(await f.text());
+    if(!Array.isArray(data.bottles)) throw 0;
+    data.bottles=data.bottles.filter(b=>BY_ID[b.catalogId]);
+    if(!confirm(`${data.bottles.length} şişe yüklenecek; mevcut veriler değiştirilecek. Devam?`)) return;
+    state={...defaults,...data,settings:{...defaults.settings,...data.settings}}; save(); closeModals(); render(); toast("Yedek yüklendi");
+  }catch(err){ alert("Dosya okunamadı."); }
+  e.target.value="";
+};
+
+fillCatalogSelect(); renderSizes(); render();
+</script>
+</body>
+</html>
