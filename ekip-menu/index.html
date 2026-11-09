@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ekip Menüsü</title>
+<title>Fix Menu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=Permanent+Marker&display=swap" rel="stylesheet">
@@ -14,15 +14,15 @@
     --mint:#5fa98c; --line:rgba(244,198,207,.25);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{font-size:min(4.1vw,1.95vh)}
+  html{font-size:min(4.1vw,1.86vh)}
   html,body{height:100%;background:var(--bg)}
   body{
     font-family:"Fraunces",Georgia,serif;color:var(--text);
     -webkit-print-color-adjust:exact;print-color-adjust:exact;
     background:
-      radial-gradient(ellipse 90% 35% at 100% 0%, rgba(40,90,74,.55), transparent 70%),
-      radial-gradient(ellipse 80% 30% at 0% 55%, rgba(30,72,60,.4), transparent 70%),
-      linear-gradient(170deg,var(--bg2),var(--bg) 60%);
+      linear-gradient(180deg, rgba(6,16,13,.55), rgba(6,16,13,.72) 40%, rgba(6,16,13,.8)),
+      url("img/bg.jpg") center/cover no-repeat fixed,
+      var(--bg);
   }
   /* one phone screen: everything fits, no scroll, no zoom */
   .screen{
@@ -32,7 +32,7 @@
   }
 
   header{text-align:center}
-  h1{font-weight:300;font-size:1.8rem;white-space:nowrap;line-height:1;color:var(--pink)}
+  h1{font-weight:600;font-size:2.1rem;letter-spacing:.02em;white-space:nowrap;color:var(--mint)!important;text-shadow:0 2px 10px rgba(0,0,0,.5);line-height:1;color:var(--pink)}
   h1 em{font-weight:300}
   .sub{margin-top:0.225rem;font-size:0.825rem;color:var(--muted);font-style:italic}
   .rules{margin-top:0.525rem;display:flex;gap:0.450rem;justify-content:center;flex-wrap:wrap}
@@ -57,6 +57,8 @@
   .or{display:flex;align-items:center;gap:0.600rem;color:var(--mint);font-family:"Permanent Marker",cursive;font-size:0.900rem}
   .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 
+  .nophoto.big{font-size:1.4rem}
+  .or-in{font-family:"Permanent Marker",cursive;font-weight:400;color:var(--mint);font-size:.75em;margin:0 .15em}
   footer{text-align:center;font-family:"Permanent Marker",cursive;color:var(--mint);font-size:0.975rem}
 </style>
 </head>
@@ -64,7 +66,7 @@
 <div class="screen">
 
   <header>
-    <h1>Ekip Menüsü <em>· Team Menu</em></h1>
+    <h1>Fix Menu</h1>
     <div class="rules">
       <span class="pill">5 kişiye ortaya: 1 başlangıç veya salata</span>
       <span class="pill mint">Kişi başı: 1 ana yemek</span>
@@ -123,6 +125,18 @@
       <div>
         <div class="name">Izgara Somon<small>760 kcal</small></div>
         <div class="desc">Izgara somon (155 gr), baby patates, sote mantar, ıspanak, roka, kiraz domates, kırmızı kinoa, limon sos</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cat">
+    <div class="cat-head"><h2>İçecekler <em>/ Drinks</em></h2><span>kişi başı</span></div>
+    <div class="item">
+      <div class="nophoto big">2×</div>
+      <div>
+        <div class="name">2 Kokteyl <span class="or-in">veya</span> 2 Yerli Alkol</div>
+        <div class="desc">Yerli alkollü içeceklere şarap dahildir</div>
+        <div class="name" style="margin-top:.2rem">+ 1 Su</div>
       </div>
     </div>
   </section>
